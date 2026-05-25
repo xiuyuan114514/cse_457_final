@@ -1,14 +1,21 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace TinyRobotEscape.Member2
 {
     public class PlayerRespawn : MonoBehaviour
     {
         [SerializeField] private Transform spawnPoint;
+        [SerializeField] private UnityEvent onRespawn = new UnityEvent();
 
         private Rigidbody playerRigidbody;
         private Vector3 fallbackPosition;
         private Quaternion fallbackRotation;
+
+        public void SetSpawnPoint(Transform newSpawnPoint)
+        {
+            spawnPoint = newSpawnPoint;
+        }
 
         private void Awake()
         {
@@ -30,6 +37,7 @@ namespace TinyRobotEscape.Member2
 
             transform.SetPositionAndRotation(targetPosition, targetRotation);
             transform.SetParent(null);
+            onRespawn.Invoke();
         }
     }
 }

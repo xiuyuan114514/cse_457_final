@@ -7,10 +7,18 @@ namespace TinyRobotEscape.Member2
     {
         [SerializeField] private Vector3 localEndOffset = new Vector3(3f, 0f, 0f);
         [SerializeField] private float moveDuration = 1.5f;
+        [SerializeField] private ChallengeHud challengeHud;
 
         private Vector3 startPosition;
         private Vector3 endPosition;
         private float timer;
+
+        public void Configure(Vector3 endOffset, float duration, ChallengeHud hud = null)
+        {
+            localEndOffset = endOffset;
+            moveDuration = duration;
+            challengeHud = hud;
+        }
 
         private void Reset()
         {
@@ -47,6 +55,11 @@ namespace TinyRobotEscape.Member2
             if (respawn != null)
             {
                 respawn.Respawn();
+            }
+
+            if (challengeHud != null)
+            {
+                challengeHud.ShowHazardFailure();
             }
         }
     }

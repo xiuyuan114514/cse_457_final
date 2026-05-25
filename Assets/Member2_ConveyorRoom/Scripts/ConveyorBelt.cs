@@ -7,8 +7,16 @@ namespace TinyRobotEscape.Member2
     {
         [SerializeField] private Vector3 localDirection = Vector3.forward;
         [SerializeField] private float pushSpeed = 4f;
+        [SerializeField] private float maxConveyorVelocity = 8f;
 
         private Vector3 WorldDirection => transform.TransformDirection(localDirection.normalized);
+
+        public void Configure(Vector3 direction, float speed, float maxVelocity)
+        {
+            localDirection = direction;
+            pushSpeed = speed;
+            maxConveyorVelocity = maxVelocity;
+        }
 
         private void Reset()
         {
@@ -28,8 +36,14 @@ namespace TinyRobotEscape.Member2
                 return;
             }
 
-            Vector3 velocity = WorldDirection * pushSpeed;
-            other.attachedRigidbody.AddForce(velocity, ForceMode.Acceleration);
+            Rigidbody playerRigidbody = other.attachedRigidbody;
+            Vector3 direction = WorldDirection;
+            float currentSpeed = Vector3.Dot(playerRigidbody.linearVelocity, direction);
+
+            if (currentSpeed < maxConveyorVelocity)
+            {
+                playerRigidbody.AddForce(direction * pushSpeed, ForceMode.Acceleration);
+            }
         }
 
         private void OnDrawGizmosSelected()

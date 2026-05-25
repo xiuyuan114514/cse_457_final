@@ -5,6 +5,13 @@ namespace TinyRobotEscape.Member2
     [RequireComponent(typeof(Collider))]
     public class FailZone : MonoBehaviour
     {
+        [SerializeField] private ChallengeHud challengeHud;
+
+        public void Configure(ChallengeHud hud)
+        {
+            challengeHud = hud;
+        }
+
         private void Reset()
         {
             Collider failCollider = GetComponent<Collider>();
@@ -22,6 +29,11 @@ namespace TinyRobotEscape.Member2
             if (respawn != null)
             {
                 respawn.Respawn();
+            }
+
+            if (challengeHud != null)
+            {
+                challengeHud.ShowFallFailure();
             }
         }
     }

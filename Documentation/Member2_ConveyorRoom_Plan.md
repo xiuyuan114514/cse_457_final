@@ -17,6 +17,15 @@ Build one playable 3D challenge room where the robot must cross conveyor belts a
 5. Basic lighting/materials so the room looks like a futuristic lab challenge.
 6. Short notes explaining how teammates can connect the room to the main maze.
 
+## Implemented In This Branch
+
+- Scene: `Assets/Member2_ConveyorRoom/Scenes/ConveyorChallengeRoom.unity`
+- Player test object: `Robot_Player_Test`, controlled in first person with WASD or Arrow Keys. Mouse looks around; Q/E also turn.
+- Challenge layout: two conveyor belt sections, one moving platform, one moving hazard, a fail zone, and a goal trigger.
+- Feedback: simple HUD with objective, reset status, and completion status.
+- Visuals: lab floor/walls, colored conveyor/platform/hazard/goal materials, animated conveyor direction markers, and colored lights.
+- Regeneration tool: Unity menu `Tiny Robot Escape > Build Member 2 Conveyor Room`.
+
 ## Recommended Room Design
 
 Make the room simple and readable:
@@ -56,6 +65,10 @@ Keep all your room objects under the parent object `Member2_ConveyorRoom`.
 - `FailZone.cs`: resets the player after falling or entering a failure area.
 - `ChallengeGoal.cs`: detects when the player reaches the room goal.
 - `PlayerRespawn.cs`: resets a player Rigidbody to a spawn point.
+- `SimpleRobotController.cs`: temporary first-person test controller for the robot in this room, compatible with Unity's New Input System and legacy Input Manager.
+- `FollowCamera.cs`: first-person camera follow behavior for the test scene.
+- `ChallengeHud.cs`: on-screen objective/result text.
+- `ConveyorBeltAnimator.cs`: animates conveyor direction markers.
 
 ## Step By Step Work Plan
 

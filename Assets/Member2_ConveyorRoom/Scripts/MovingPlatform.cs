@@ -8,12 +8,20 @@ namespace TinyRobotEscape.Member2
         [SerializeField] private float moveDuration = 2f;
         [SerializeField] private bool startMoving = true;
 
+        private Rigidbody platformRigidbody;
         private Vector3 startPosition;
         private Vector3 endPosition;
         private float timer;
 
+        public void Configure(Vector3 endOffset, float duration)
+        {
+            localEndOffset = endOffset;
+            moveDuration = duration;
+        }
+
         private void Awake()
         {
+            platformRigidbody = GetComponent<Rigidbody>();
             startPosition = transform.position;
             endPosition = startPosition + transform.TransformDirection(localEndOffset);
         }
@@ -27,7 +35,16 @@ namespace TinyRobotEscape.Member2
 
             timer += Time.fixedDeltaTime;
             float t = Mathf.PingPong(timer / moveDuration, 1f);
-            transform.position = Vector3.Lerp(startPosition, endPosition, t);
+            Vector3 nextPosition = Vector3.Lerp(startPosition, endPosition, t);
+
+            if (platformRigidbody != null)
+            {
+                platformRigidbody.MovePosition(nextPosition);
+            }
+            else
+            {
+                transform.position = nextPosition;
+            }
         }
 
         private void OnCollisionEnter(Collision collision)
