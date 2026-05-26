@@ -8,9 +8,6 @@ public class RobotController : MonoBehaviour
     public float JumpForce = 5f;
     public float JumpDelay = 1f;
 
-    [Header("Ground")]
-    public float GroundY = -10f;
-
     [Header("References (auto-found if empty)")]
     public GameObject Body;
     public GameObject Head;
@@ -19,7 +16,6 @@ public class RobotController : MonoBehaviour
     public Transform CameraTransform;
 
     Rigidbody bodyRb;
-    bool grounded;
     float lastJumpTime = -999f;
     float lateralSpeed;
     float forwardSpeed;
@@ -38,6 +34,8 @@ public class RobotController : MonoBehaviour
 
     // Mouse look
     float mouseYaw;
+
+    Camera cam;
 
     void Start()
     {
@@ -68,6 +66,12 @@ public class RobotController : MonoBehaviour
         // Calculate eye center position in head's local space
         // Eyes are at (-0.15, 0.15, 0.5) and (0.15, 0.15, 0.5), center = (0, 0.15, 0.5)
         eyeOffsetLocal = new Vector3(0f, 0.15f, 0.5f);
+
+        if (CameraTransform != null)
+        {
+            cam = CameraTransform.GetComponent<Camera>();
+            if (cam != null) cam.nearClipPlane = 0.01f;
+        }
     }
 
     GameObject FindChild(string name)
@@ -109,14 +113,6 @@ public class RobotController : MonoBehaviour
     void FixedUpdate()
     {
         if (bodyRb == null) return;
-
-        // Clamp body position so it doesn't fall below GroundY
-        if (Body.transform.position.y < GroundY)
-        {
-            Body.transform.position = new Vector3(
-                Body.transform.position.x, GroundY, Body.transform.position.z);
-            bodyRb.linearVelocity = new Vector3(bodyRb.linearVelocity.x, 0, bodyRb.linearVelocity.z);
-        }
 
         // Movement based on head facing direction (first person)
         Vector3 moveForce = Vector3.zero;
@@ -183,9 +179,21 @@ public class RobotController : MonoBehaviour
         // Camera follows eye position on head
         if (CameraTransform == null || Head == null) return;
 
-        // Position camera at eye center (between two eyes in head local space)
-        CameraTransform.position = Head.transform.TransformPoint(eyeOffsetLocal);
+        // Position camera at eye center
+        Vector3 eyePos = Head.transform.TransformPoint(eyeOffsetLocal);
         CameraTransform.rotation = Head.transform.rotation;
+
+        // Prevent camera from clipping through walls
+        Vector3 bodyCenter = Body.transform.position;
+        Vector3 dir = eyePos - bodyCenter;
+        float dist = dir.magnitude;
+        if (Physics.Raycast(bodyCenter, dir.normalized, out RaycastHit hit, dist))
+        {
+            // Pull camera back in front of the wall
+            eyePos = hit.point - dir.normalized * 0.05f;
+        }
+
+        CameraTransform.position = eyePos;
     }
 
     void AnimateArms()
