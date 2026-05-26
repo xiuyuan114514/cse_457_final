@@ -66,7 +66,7 @@ public class BbRigidbodyController : MonoBehaviour
         HeadUp(Head, TorqueScale);
 
         // Point head in direction of movement
-        var angle = Vector3.Dot(Head.transform.right, rbody.velocity.normalized) * (Mathf.Rad2Deg * Time.fixedDeltaTime * 12f);
+        var angle = Vector3.Dot(Head.transform.right, rbody.linearVelocity.normalized) * (Mathf.Rad2Deg * Time.fixedDeltaTime * 12f);
         var q = Quaternion.AngleAxis(angle, Vector3.forward);
         Head.rotation *= q;
             
@@ -86,7 +86,7 @@ public class BbRigidbodyController : MonoBehaviour
 
             if (Oomph)
             {
-                var oomphForce = 1f / Mathf.Pow(rbody.velocity.magnitude, 2f);
+                var oomphForce = 1f / Mathf.Pow(rbody.linearVelocity.magnitude, 2f);
                 oomphForce = Mathf.Clamp(oomphForce, 0, Speed);
                 rbody.AddForce(moveForce.normalized * oomphForce);
             }
