@@ -22,6 +22,8 @@ public class SubSceneReturnHandler : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         Time.timeScale = 1f;
-        SceneManager.LoadScene("Maze");
+
+        // Show the robot_with_key image for 2 seconds, then load Maze
+        SceneTransitionOverlay.Show(2f);
     }
 }

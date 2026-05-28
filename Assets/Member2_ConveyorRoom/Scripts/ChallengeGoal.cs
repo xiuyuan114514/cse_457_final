@@ -66,15 +66,8 @@ namespace TinyRobotEscape.Member2
 
             if (GUI.Button(new Rect(x, y, w, h), "RETURN TO MAZE", btnStyle))
             {
-                var session = GameSessionData.GetOrCreate();
-                if (session.CurrentKeyIndex >= 0)
-                    session.MarkKeyCollected(session.CurrentKeyIndex);
-                session.ReturningFromSubScene = true;
-
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-                Time.timeScale = 1f;
-                SceneManager.LoadScene("Maze");
+                showReturnButton = false; // Hide the OnGUI button immediately
+                SubSceneReturnHandler.ReturnToMaze();
             }
         }
     }
