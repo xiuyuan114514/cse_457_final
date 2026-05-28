@@ -6,7 +6,11 @@ public class LaserRoomBootstrap : MonoBehaviour
     public GameObject robotPrefab;
     public LaserRoomGameManager gameManager;
     public float robotHeight = 1.2f;
-    public float robotSpeedMultiplier = 12f;
+    public float robotSpeedMultiplier = 10.8f;
+
+    [Header("Atmosphere")]
+    public int extraStarCount = 120;
+    public float guidanceBeamWidth = 0.45f;
 
     [Header("Materials")]
     public Material laserMaterial;
@@ -23,6 +27,8 @@ public class LaserRoomBootstrap : MonoBehaviour
     const float CourseZMax = 46f;
     const float EnvelopeZMin = -70f;
     const float EnvelopeZMax = 70f;
+    static readonly Vector3 CrystalPosition = new Vector3(0f, 25f, 0f);
+    static readonly Vector3 DestinationPosition = new Vector3(0f, 0.35f, 58f);
 
     Material runtimeLaserMaterial;
     Material runtimeSolidWallMaterial;
@@ -30,6 +36,8 @@ public class LaserRoomBootstrap : MonoBehaviour
     Material runtimeBounceWallMaterial;
     Material runtimeStartPadMaterial;
     Material runtimeGoalZoneMaterial;
+    Material runtimeGuidanceBeamMaterial;
+    PhysicsMaterial runtimeLowFrictionMaterial;
 
     void Awake()
     {
@@ -55,9 +63,12 @@ public class LaserRoomBootstrap : MonoBehaviour
         Transform generatedRoot = CreateGeneratedRoot();
         Transform spawnPoint = CreateMarker(generatedRoot, "StartPoint", new Vector3(0f, 0.6f, -58f), Quaternion.identity);
 
+        ApplyLowFrictionToStaticEdgeWalls();
         CreatePad(generatedRoot, "StartPad", spawnPoint.position + new Vector3(0f, -0.52f, 0f), 7f, runtimeStartPadMaterial, false);
         CreateGoal(generatedRoot, new Vector3(0f, FloorY, 58f));
         CreateCrystalGuidanceLights(generatedRoot);
+        CreateCrystalGuidanceBeam(generatedRoot);
+        CreateExtraStars(generatedRoot);
         CreateLaneLayout(generatedRoot);
         CreateRobot(generatedRoot, spawnPoint);
     }
@@ -118,8 +129,13 @@ public class LaserRoomBootstrap : MonoBehaviour
             robot.CameraTransform = robotCamera.transform;
         }
 
+        ApplyLowFrictionToRobot(robotObject);
+
         if (body != null)
+        {
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
+        }
 
         gameManager.RegisterRobot(robot, body, spawnPoint);
     }
@@ -193,9 +209,19 @@ public class LaserRoomBootstrap : MonoBehaviour
 
     void CreateCrystalGuidanceLights(Transform parent)
     {
-        Vector3 crystalPosition = new Vector3(0f, 20f, 0f);
-        CreateCrystalSpotLight(parent, "CrystalLight_StartRegion", crystalPosition, new Vector3(0f, 0.2f, -58f), 2.6f);
-        CreateCrystalSpotLight(parent, "CrystalLight_Destination", crystalPosition, new Vector3(0f, 0.2f, 58f), 2.9f);
+        CreateCrystalSpotLight(parent, "CrystalLight_StartRegion", CrystalPosition, new Vector3(0f, 0.2f, -58f), 2.6f);
+        CreateCrystalSpotLight(parent, "CrystalLight_Destination", CrystalPosition, DestinationPosition, 4.2f);
+
+        GameObject destinationGlow = new GameObject("Destination_GreenGlow");
+        destinationGlow.transform.SetParent(parent, false);
+        destinationGlow.transform.position = DestinationPosition + Vector3.up * 1.2f;
+
+        Light glow = destinationGlow.AddComponent<Light>();
+        glow.type = LightType.Point;
+        glow.color = new Color(0.2f, 1f, 0.55f);
+        glow.intensity = 5.5f;
+        glow.range = 16f;
+        glow.shadows = LightShadows.Soft;
     }
 
     void CreateCrystalSpotLight(Transform parent, string lightName, Vector3 position, Vector3 target, float intensity)
@@ -213,6 +239,116 @@ public class LaserRoomBootstrap : MonoBehaviour
         spot.spotAngle = 32f;
         spot.innerSpotAngle = 16f;
         spot.shadows = LightShadows.Soft;
+    }
+
+    void CreateCrystalGuidanceBeam(Transform parent)
+    {
+        Transform beams = CreateMarker(parent, "CrystalGuidanceBeam", Vector3.zero, Quaternion.identity);
+        CreateBeamLine(beams, "OuterBeam", guidanceBeamWidth, new Color(0.1f, 0.95f, 1f, 0.45f),
+            new Color(0.15f, 1f, 0.45f, 0.7f));
+        CreateBeamLine(beams, "CoreBeam", guidanceBeamWidth * 0.28f, new Color(0.85f, 1f, 1f, 0.85f),
+            new Color(0.75f, 1f, 0.75f, 0.95f));
+    }
+
+    void CreateBeamLine(Transform parent, string beamName, float width, Color startColor, Color endColor)
+    {
+        GameObject beamObject = new GameObject(beamName);
+        beamObject.transform.SetParent(parent, false);
+
+        LineRenderer line = beamObject.AddComponent<LineRenderer>();
+        line.sharedMaterial = runtimeGuidanceBeamMaterial;
+        line.useWorldSpace = false;
+        line.positionCount = 2;
+        line.SetPosition(0, CrystalPosition);
+        line.SetPosition(1, DestinationPosition);
+        line.startWidth = Mathf.Max(0.04f, width);
+        line.endWidth = Mathf.Max(0.04f, width * 0.7f);
+        line.startColor = startColor;
+        line.endColor = endColor;
+        line.numCapVertices = 8;
+        line.numCornerVertices = 4;
+        line.textureMode = LineTextureMode.Stretch;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false;
+    }
+
+    void CreateExtraStars(Transform parent)
+    {
+        if (extraStarCount <= 0)
+            return;
+
+        Transform starRoot = CreateMarker(parent, "ExtraRuntimeStars", Vector3.zero, Quaternion.identity);
+        Material starMaterial = FindSceneMaterial("Star_01");
+        if (starMaterial == null)
+        {
+            starMaterial = MakeMaterial(null, "M1_RuntimeExtraStar",
+                Color.white, new Color(3f, 3f, 3f, 1f), 0f, 0.2f, false);
+        }
+
+        Mesh starMesh = CreateStarMesh();
+        for (int i = 0; i < extraStarCount; i++)
+        {
+            GameObject star = new GameObject($"ExtraStar_{i + 1:000}");
+            star.transform.SetParent(starRoot, false);
+            star.transform.localPosition = ExtraStarPosition(i);
+            float scale = Mathf.Lerp(0.55f, 2.2f, PseudoRandom01(i, 3.7f));
+            star.transform.localScale = Vector3.one * scale;
+            star.transform.localRotation = Quaternion.Euler(
+                PseudoRandom01(i, 9.1f) * 360f,
+                PseudoRandom01(i, 13.4f) * 360f,
+                PseudoRandom01(i, 19.8f) * 360f);
+
+            MeshFilter filter = star.AddComponent<MeshFilter>();
+            filter.sharedMesh = starMesh;
+
+            MeshRenderer renderer = star.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = starMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+    }
+
+    Vector3 ExtraStarPosition(int index)
+    {
+        float yaw = Mathf.Repeat(index * 137.508f + PseudoRandom01(index, 1.2f) * 24f, 360f);
+        float pitch = Mathf.Lerp(18f, 78f, PseudoRandom01(index, 5.4f));
+        float radius = Mathf.Lerp(230f, 390f, PseudoRandom01(index, 8.6f));
+        Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+        return rotation * Vector3.forward * radius;
+    }
+
+    float PseudoRandom01(int index, float seed)
+    {
+        float value = Mathf.Sin((index + 1) * 12.9898f + seed * 78.233f) * 43758.5453f;
+        return value - Mathf.Floor(value);
+    }
+
+    Mesh CreateStarMesh()
+    {
+        Mesh mesh = new Mesh { name = "M1_RuntimeStarMesh" };
+        mesh.vertices = new[]
+        {
+            Vector3.up,
+            Vector3.down,
+            Vector3.left,
+            Vector3.right,
+            Vector3.forward,
+            Vector3.back
+        };
+        mesh.triangles = new[]
+        {
+            0, 4, 2,
+            0, 3, 4,
+            0, 5, 3,
+            0, 2, 5,
+            1, 2, 4,
+            1, 4, 3,
+            1, 3, 5,
+            1, 5, 2
+        };
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
     }
 
     void CreateCourseEnvelope(Transform parent)
@@ -327,7 +463,7 @@ public class LaserRoomBootstrap : MonoBehaviour
         MeshFilter meshFilter = wall.AddComponent<MeshFilter>();
         MeshRenderer renderer = wall.AddComponent<MeshRenderer>();
         bool needsCollider = !passThrough || bounce;
-        MeshCollider meshCollider = needsCollider ? wall.AddComponent<MeshCollider>() : null;
+        BoxCollider boxCollider = needsCollider ? wall.AddComponent<BoxCollider>() : null;
 
         float halfLength = length * 0.5f;
         float halfThickness = thickness * 0.5f;
@@ -368,10 +504,11 @@ public class LaserRoomBootstrap : MonoBehaviour
         mesh.RecalculateBounds();
         meshFilter.sharedMesh = mesh;
 
-        if (meshCollider != null)
+        if (boxCollider != null)
         {
-            meshCollider.sharedMesh = mesh;
-            meshCollider.convex = bounce;
+            boxCollider.size = new Vector3(length, height, thickness);
+            boxCollider.center = Vector3.zero;
+            boxCollider.sharedMaterial = runtimeLowFrictionMaterial;
         }
 
         if (renderer != null)
@@ -452,6 +589,8 @@ public class LaserRoomBootstrap : MonoBehaviour
 
     void PrepareMaterials()
     {
+        runtimeLowFrictionMaterial = CreateLowFrictionMaterial();
+
         runtimeLaserMaterial = MakeMaterial(laserMaterial, "M1_RuntimeLaserRed",
             new Color(1f, 0.03f, 0.015f, 1f), new Color(4.5f, 0.08f, 0.03f, 1f), 0f, 0.35f, false);
         runtimeSolidWallMaterial = MakeMaterial(solidWallMaterial, "M1_RuntimeDeepBlueWall",
@@ -463,7 +602,52 @@ public class LaserRoomBootstrap : MonoBehaviour
         runtimeStartPadMaterial = MakeMaterial(startPadMaterial, "M1_RuntimeStartPad",
             new Color(0.05f, 0.9f, 0.95f, 1f), new Color(0.02f, 0.5f, 0.62f, 1f), 0.05f, 0.55f, true);
         runtimeGoalZoneMaterial = MakeMaterial(goalZoneMaterial, "M1_RuntimeGoalZone",
-            new Color(0.2f, 1f, 0.48f, 0.7f), new Color(0.06f, 1.2f, 0.28f, 1f), 0.05f, 0.7f, true);
+            new Color(0.2f, 1f, 0.48f, 0.78f), new Color(0.08f, 2.6f, 0.7f, 1f), 0.05f, 0.7f, true);
+        runtimeGuidanceBeamMaterial = MakeMaterial(null, "M1_RuntimeGuidanceBeam",
+            new Color(0.12f, 1f, 0.68f, 0.48f), new Color(0.12f, 4f, 2.4f, 1f), 0f, 0.9f, true);
+        runtimeGuidanceBeamMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 20;
+    }
+
+    PhysicsMaterial CreateLowFrictionMaterial()
+    {
+        return new PhysicsMaterial("M1_RuntimeLowFriction")
+        {
+            dynamicFriction = 0f,
+            staticFriction = 0f,
+            bounciness = 0f,
+            frictionCombine = PhysicsMaterialCombine.Minimum,
+            bounceCombine = PhysicsMaterialCombine.Minimum
+        };
+    }
+
+    Material FindSceneMaterial(string objectName)
+    {
+        GameObject sceneObject = GameObject.Find(objectName);
+        if (sceneObject == null)
+            return null;
+
+        Renderer renderer = sceneObject.GetComponent<Renderer>();
+        return renderer != null ? renderer.sharedMaterial : null;
+    }
+
+    void ApplyLowFrictionToStaticEdgeWalls()
+    {
+        Collider[] colliders = GetComponentsInChildren<Collider>(true);
+        foreach (Collider roomCollider in colliders)
+        {
+            if (!roomCollider.isTrigger && roomCollider.gameObject.name.StartsWith("EdgeWall"))
+                roomCollider.sharedMaterial = runtimeLowFrictionMaterial;
+        }
+    }
+
+    void ApplyLowFrictionToRobot(GameObject robotObject)
+    {
+        Collider[] colliders = robotObject.GetComponentsInChildren<Collider>(true);
+        foreach (Collider robotCollider in colliders)
+        {
+            if (!robotCollider.isTrigger)
+                robotCollider.sharedMaterial = runtimeLowFrictionMaterial;
+        }
     }
 
     Material MakeMaterial(Material source, string materialName, Color baseColor, Color emission, float metallic, float smoothness, bool transparent)

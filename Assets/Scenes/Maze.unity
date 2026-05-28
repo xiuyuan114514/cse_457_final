@@ -3454,9 +3454,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 774c59cecfc31b34880246e9d68e7c63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobotController
-  Speed: 10
+  Speed: 20
   JumpForce: 5
   JumpDelay: 1
+  InitialYaw: 90
   Body: {fileID: 0}
   Head: {fileID: 0}
   LeftArm: {fileID: 0}

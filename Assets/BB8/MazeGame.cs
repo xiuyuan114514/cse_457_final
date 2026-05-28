@@ -29,6 +29,12 @@ public class MazeGame : MonoBehaviour
     // References to key GameObjects so we can hide collected ones
     GameObject[] keyObjects = new GameObject[3];
 
+    const string ImportedKeyResourcePath = "OpenGameArt/KeyLowPoly/key";
+    const string ImportedKeyVisualName = "ImportedLowPolyKeyVisual";
+    const float ImportedKeyTargetHeight = 1.35f;
+    const float ImportedKeyGroundClearance = 0.01f;
+    static Material importedKeyMaterial;
+
     // True while waiting for delayed teleport — suppresses fall detection
     bool teleportPending = false;
 
@@ -46,7 +52,10 @@ public class MazeGame : MonoBehaviour
         {
             var key = GameObject.Find(keyNames[i]);
             if (key != null)
+            {
                 keyObjects[i] = key;
+                InstallImportedKeyVisual(key);
+            }
         }
 
         var session = GameSessionData.GetOrCreate();
@@ -68,6 +77,118 @@ public class MazeGame : MonoBehaviour
             teleportPending = true;
             StartCoroutine(DelayedTeleport(session.ReturnPosition, session.ReturnRotation));
         }
+    }
+
+    void InstallImportedKeyVisual(GameObject keyObject)
+    {
+        if (keyObject.transform.Find(ImportedKeyVisualName) != null)
+            return;
+
+        GameObject importedKeyPrefab = Resources.Load<GameObject>(ImportedKeyResourcePath);
+        if (importedKeyPrefab == null)
+        {
+            Debug.LogWarning($"[MazeGame] Could not load imported key visual at Resources/{ImportedKeyResourcePath}.");
+            return;
+        }
+
+        HideOriginalKeyVisuals(keyObject);
+
+        KeyRotator keyRotator = keyObject.GetComponent<KeyRotator>();
+        if (keyRotator != null)
+            keyRotator.bobHeight = 0f;
+
+        GameObject importedVisual = Instantiate(importedKeyPrefab, keyObject.transform);
+        importedVisual.name = ImportedKeyVisualName;
+        importedVisual.transform.localPosition = Vector3.zero;
+        importedVisual.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+        importedVisual.transform.localScale = Vector3.one;
+
+        ApplyImportedKeyMaterial(importedVisual);
+        FitImportedKeyVisual(keyObject, importedVisual);
+    }
+
+    void HideOriginalKeyVisuals(GameObject keyObject)
+    {
+        Renderer[] renderers = keyObject.GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer keyRenderer in renderers)
+            keyRenderer.enabled = false;
+    }
+
+    void ApplyImportedKeyMaterial(GameObject importedVisual)
+    {
+        Renderer[] renderers = importedVisual.GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer keyRenderer in renderers)
+            keyRenderer.sharedMaterial = GetImportedKeyMaterial();
+    }
+
+    Material GetImportedKeyMaterial()
+    {
+        if (importedKeyMaterial != null)
+            return importedKeyMaterial;
+
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
+            shader = Shader.Find("Standard");
+
+        importedKeyMaterial = new Material(shader)
+        {
+            name = "RuntimeImportedGoldKey"
+        };
+        importedKeyMaterial.SetColor("_BaseColor", new Color(1f, 0.78f, 0.08f, 1f));
+        importedKeyMaterial.SetColor("_Color", new Color(1f, 0.78f, 0.08f, 1f));
+        importedKeyMaterial.SetColor("_EmissionColor", new Color(0.85f, 0.45f, 0.02f, 1f));
+        importedKeyMaterial.EnableKeyword("_EMISSION");
+
+        if (importedKeyMaterial.HasProperty("_Metallic"))
+            importedKeyMaterial.SetFloat("_Metallic", 0.85f);
+        if (importedKeyMaterial.HasProperty("_Smoothness"))
+            importedKeyMaterial.SetFloat("_Smoothness", 0.68f);
+
+        return importedKeyMaterial;
+    }
+
+    void FitImportedKeyVisual(GameObject keyObject, GameObject importedVisual)
+    {
+        if (!TryGetRendererBounds(importedVisual, out Bounds bounds))
+            return;
+
+        if (bounds.size.y > 0.001f)
+        {
+            float scale = ImportedKeyTargetHeight / bounds.size.y;
+            importedVisual.transform.localScale *= scale;
+        }
+
+        if (!TryGetRendererBounds(importedVisual, out bounds))
+            return;
+
+        Collider keyCollider = keyObject.GetComponent<Collider>();
+        float groundY = keyCollider != null
+            ? keyCollider.bounds.min.y
+            : keyObject.transform.position.y - 0.5f;
+        float lift = groundY + ImportedKeyGroundClearance - bounds.min.y;
+        importedVisual.transform.position += Vector3.up * lift;
+    }
+
+    bool TryGetRendererBounds(GameObject root, out Bounds bounds)
+    {
+        Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+        bounds = new Bounds(root.transform.position, Vector3.zero);
+        bool hasRenderer = false;
+
+        foreach (Renderer keyRenderer in renderers)
+        {
+            if (!hasRenderer)
+            {
+                bounds = keyRenderer.bounds;
+                hasRenderer = true;
+            }
+            else
+            {
+                bounds.Encapsulate(keyRenderer.bounds);
+            }
+        }
+
+        return hasRenderer;
     }
 
     void Update()
