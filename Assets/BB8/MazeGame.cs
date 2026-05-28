@@ -47,6 +47,13 @@ public class MazeGame : MonoBehaviour
 
     void Start()
     {
+        // Set up Star Wars–style space background
+        if (FindFirstObjectByType<MazeSpaceBackground>() == null)
+        {
+            var bgGO = new GameObject("SpaceBackground");
+            bgGO.AddComponent<MazeSpaceBackground>();
+        }
+
         // Find all keys by name Key1, Key2, Key3
         for (int i = 0; i < 3; i++)
         {

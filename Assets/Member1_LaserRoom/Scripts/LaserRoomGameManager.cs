@@ -157,14 +157,8 @@ public class LaserRoomGameManager : MonoBehaviour
 
     void ReturnToMaze()
     {
-        var session = GameSessionData.GetOrCreate();
-        if (session.CurrentKeyIndex >= 0)
-            session.MarkKeyCollected(session.CurrentKeyIndex);
-        session.ReturningFromSubScene = true;
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        SceneManager.LoadScene("Maze");
+        state = LaserRoomState.Playing; // Hide the OnGUI panel immediately
+        SubSceneReturnHandler.ReturnToMaze();
     }
 
     void InitStyles()

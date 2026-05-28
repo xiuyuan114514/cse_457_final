@@ -49,15 +49,8 @@ public class ReturnToMazeUI : MonoBehaviour
 
     void ReturnToMaze()
     {
-        var session = GameSessionData.GetOrCreate();
-        if (session.CurrentKeyIndex >= 0)
-            session.MarkKeyCollected(session.CurrentKeyIndex);
-        session.ReturningFromSubScene = true;
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        Time.timeScale = 1f;
-        SceneManager.LoadScene("Maze");
+        showButton = false; // Hide the OnGUI panel immediately
+        SubSceneReturnHandler.ReturnToMaze();
     }
 
     void InitStyles()
