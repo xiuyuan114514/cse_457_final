@@ -1,0 +1,8 @@
+Asset: Key - low poly
+Author: codeinfernogames
+Source: https://opengameart.org/content/key-low-poly
+License: CC0 1.0
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+Imported file used by this project:
+Assets/Resources/OpenGameArt/KeyLowPoly/key.fbx

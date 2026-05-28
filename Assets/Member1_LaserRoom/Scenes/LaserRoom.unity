@@ -454,7 +454,9 @@ MonoBehaviour:
   robotPrefab: {fileID: 8673027547186543684, guid: 761b471cdffd5084fa3ac801470bc241, type: 3}
   gameManager: {fileID: 300005}
   robotHeight: 1.2
-  robotSpeedMultiplier: 12
+  robotSpeedMultiplier: 10.8
+  extraStarCount: 120
+  guidanceBeamWidth: 0.45
   laserMaterial: {fileID: 2100000, guid: 3a1b5c7d9e2f4a6b8c0d1e2f3a4b5c6d, type: 2}
   solidWallMaterial: {fileID: 2100000, guid: 4b2c6d8e0f1a4b5c9d0e2f3a4b5c6d7e, type: 2}
   ghostWallMaterial: {fileID: 2100000, guid: 5c3d7e9f102b4c6d8e0f1a2b3c4d5e6f, type: 2}
@@ -602,8 +604,8 @@ Transform:
   m_GameObject: {fileID: 300200}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 20, z: 0}
-  m_LocalScale: {x: 12, y: 12, z: 12}
+  m_LocalPosition: {x: 0, y: 25, z: 0}
+  m_LocalScale: {x: 13.2, y: 13.2, z: 13.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 300001}

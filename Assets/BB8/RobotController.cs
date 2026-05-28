@@ -8,6 +8,9 @@ public class RobotController : MonoBehaviour
     public float JumpForce = 5f;
     public float JumpDelay = 1f;
 
+    [Header("View")]
+    public float InitialYaw = 0f;
+
     [Header("References (auto-found if empty)")]
     public GameObject Body;
     public GameObject Head;
@@ -53,6 +56,9 @@ public class RobotController : MonoBehaviour
         }
 
         bodyRb = Body.GetComponent<Rigidbody>();
+        mouseYaw = InitialYaw;
+        if (Head != null)
+            Head.transform.rotation = Quaternion.Euler(0f, mouseYaw, 0f);
 
         // Record initial offsets from Body (for translate-only following)
         if (Head != null) headOffset = Head.transform.position - Body.transform.position;
