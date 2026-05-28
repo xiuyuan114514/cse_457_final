@@ -17,13 +17,17 @@ namespace Assets
 
         void FixedUpdate()
         {
+            if (body.isKinematic) return;
+
             var target = Vector3.up;
             var current = body.transform.forward;
             // Axis of rotation
             var x = Vector3.Cross(current, target);
-            var theta = Mathf.Asin(x.magnitude);
+            float xMag = x.magnitude;
+            if (xMag < 0.0001f) return; // vectors are parallel, no torque needed
+            var theta = Mathf.Asin(xMag);
             // Change in angular velocity
-            var w = x.normalized * (theta / Time.fixedDeltaTime * TorqueScale);
+            var w = (x / xMag) * (theta / Time.fixedDeltaTime * TorqueScale);
             // Current rotation in world space
             var q = body.transform.rotation * body.inertiaTensorRotation;
             // Transform to local space

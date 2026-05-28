@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LaserRoomGameManager : MonoBehaviour
 {
@@ -143,9 +144,26 @@ public class LaserRoomGameManager : MonoBehaviour
             return;
         }
 
-        DrawCrispLabel(new Rect(x, y + 50f, boxWidth, 62f), "YOU WIN", titleStyle, new Color(0.2f, 1f, 0.58f));
-        DrawCrispLabel(new Rect(x + 32f, y + 122f, boxWidth - 64f, 34f), "LASER ROOM COMPLETE", messageStyle,
+        DrawCrispLabel(new Rect(x, y + 34f, boxWidth, 54f), "YOU WIN", titleStyle, new Color(0.2f, 1f, 0.58f));
+        DrawCrispLabel(new Rect(x + 32f, y + 90f, boxWidth - 64f, 34f), "LASER ROOM COMPLETE", messageStyle,
             new Color(0.76f, 0.96f, 1f));
+
+        Rect returnRect = new Rect(x + 130f, y + 138f, 160f, 46f);
+        DrawSciFiButton(returnRect, "RETURN TO MAZE", new Color(0.2f, 1f, 0.58f, 0.8f));
+        if (WasClicked(returnRect))
+            ReturnToMaze();
+    }
+
+    void ReturnToMaze()
+    {
+        var session = GameSessionData.GetOrCreate();
+        if (session.CurrentKeyIndex >= 0)
+            session.MarkKeyCollected(session.CurrentKeyIndex);
+        session.ReturningFromSubScene = true;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        SceneManager.LoadScene("Maze");
     }
 
     void InitStyles()

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -6,7 +7,14 @@ public class MazeGame : MonoBehaviour
     [Header("Game Settings")]
     public int totalKeys = 3;
     public float fallThreshold = -5f;
-    public float timeLimit = 180f; // 3 minutes
+
+    [Header("Key → Scene mapping (order matches Key1/Key2/Key3)")]
+    public string[] keyScenes = new string[]
+    {
+        "MagnetPuzzleRoom",
+        "LaserRoom",
+        "ConveyorChallengeRoom"
+    };
 
     int keysCollected = 0;
     bool gameWon = false;
@@ -14,38 +22,60 @@ public class MazeGame : MonoBehaviour
     string loseReason = "";
     string message = "";
     float messageTimer = 0f;
-    float timeRemaining;
 
-    // UI style
+    // Key names in the scene (Key1, Key2, Key3)
+    string[] keyNames = new string[] { "Key1", "Key2", "Key3" };
+
+    // References to key GameObjects so we can hide collected ones
+    GameObject[] keyObjects = new GameObject[3];
+
+    // True while waiting for delayed teleport — suppresses fall detection
+    bool teleportPending = false;
+
+    // UI styles
     GUIStyle scoreStyle;
     GUIStyle winStyle;
     GUIStyle loseStyle;
     GUIStyle messageStyle;
     GUIStyle buttonStyle;
-    GUIStyle timerStyle;
 
     void Start()
     {
-        timeRemaining = timeLimit;
+        // Find all keys by name Key1, Key2, Key3
+        for (int i = 0; i < 3; i++)
+        {
+            var key = GameObject.Find(keyNames[i]);
+            if (key != null)
+                keyObjects[i] = key;
+        }
+
+        var session = GameSessionData.GetOrCreate();
+
+        // Restore state from session
+        keysCollected = session.KeysCollected;
+
+        // Hide already-collected keys
+        for (int i = 0; i < 3; i++)
+        {
+            if (session.KeyCollected[i] && keyObjects[i] != null)
+                keyObjects[i].SetActive(false);
+        }
+
+        // If returning from a sub-scene, teleport player back to saved position
+        if (session.ReturningFromSubScene)
+        {
+            session.ReturningFromSubScene = false;
+            teleportPending = true;
+            StartCoroutine(DelayedTeleport(session.ReturnPosition, session.ReturnRotation));
+        }
     }
 
     void Update()
     {
-        if (gameWon || gameLost) return;
+        if (gameWon || gameLost || teleportPending) return;
 
         if (messageTimer > 0)
             messageTimer -= Time.deltaTime;
-
-        // Timer countdown
-        timeRemaining -= Time.deltaTime;
-        if (timeRemaining <= 0)
-        {
-            timeRemaining = 0;
-            gameLost = true;
-            loseReason = "Time's up!";
-            Time.timeScale = 0f;
-            return;
-        }
 
         // Fall detection
         var body = GetComponentInChildren<Rigidbody>();
@@ -61,14 +91,30 @@ public class MazeGame : MonoBehaviour
     {
         if (gameWon || gameLost) return;
 
-        // Key collection
-        if (other.gameObject.name.StartsWith("Key"))
+        // Key touch → save position and teleport to sub-scene
+        for (int i = 0; i < 3; i++)
         {
-            Destroy(other.gameObject);
-            keysCollected++;
-            message = "Key collected! (" + keysCollected + "/" + totalKeys + ")";
-            messageTimer = 2f;
-            return;
+            if (other.gameObject.name == keyNames[i])
+            {
+                if (GameSessionData.Instance != null && GameSessionData.Instance.KeyCollected[i])
+                    return; // already collected
+
+                // Save the key's position + Y offset so robot spawns above the maze
+                var session = GameSessionData.GetOrCreate();
+                Vector3 keyWorldPos = other.transform.position;
+                session.ReturnPosition = keyWorldPos + Vector3.up * 2f;
+                session.ReturnRotation = Quaternion.identity;
+                session.CurrentKeyIndex = i;
+                Debug.Log($"[MazeGame] Key {keyNames[i]} touched at worldPos={keyWorldPos}, saving returnPos={session.ReturnPosition}");
+
+                // Load the sub-scene
+                if (i < keyScenes.Length && !string.IsNullOrEmpty(keyScenes[i]))
+                {
+                    Time.timeScale = 1f;
+                    SceneManager.LoadScene(keyScenes[i]);
+                }
+                return;
+            }
         }
 
         // Exit detection
@@ -91,16 +137,9 @@ public class MazeGame : MonoBehaviour
     {
         InitStyles();
 
-        // Score - top left
+        // Key count - top left
         GUI.Label(new Rect(20, 20, 300, 40),
             "Keys: " + keysCollected + " / " + totalKeys, scoreStyle);
-
-        // Timer - top right
-        int minutes = Mathf.FloorToInt(timeRemaining / 60f);
-        int seconds = Mathf.FloorToInt(timeRemaining % 60f);
-        string timerText = string.Format("{0}:{1:00}", minutes, seconds);
-        timerStyle.normal.textColor = timeRemaining <= 30f ? Color.red : Color.white;
-        GUI.Label(new Rect(Screen.width - 160, 20, 140, 40), timerText, timerStyle);
 
         // Temporary message
         if (messageTimer > 0 && !gameWon && !gameLost)
@@ -112,10 +151,7 @@ public class MazeGame : MonoBehaviour
         // Win screen
         if (gameWon)
         {
-            DrawEndScreen("You Win!", new Color(0.2f, 1f, 0.2f),
-                "Time: " + string.Format("{0}:{1:00}",
-                    Mathf.FloorToInt((timeLimit - timeRemaining) / 60f),
-                    Mathf.FloorToInt((timeLimit - timeRemaining) % 60f)));
+            DrawEndScreen("You Win!", new Color(0.2f, 1f, 0.2f), "All keys collected!");
         }
 
         // Lose screen
@@ -142,14 +178,55 @@ public class MazeGame : MonoBehaviour
             "Play Again", buttonStyle))
         {
             Time.timeScale = 1f;
-            RestartGame();
+            // Reset session data on restart
+            if (GameSessionData.Instance != null)
+                Destroy(GameSessionData.Instance.gameObject);
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 
-    void RestartGame()
+    IEnumerator DelayedTeleport(Vector3 targetPos, Quaternion targetRot)
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        // Make all rigidbodies kinematic immediately to freeze physics
+        var allRbs = GetComponentsInChildren<Rigidbody>();
+        bool[] wasKinematic = new bool[allRbs.Length];
+        for (int i = 0; i < allRbs.Length; i++)
+        {
+            wasKinematic[i] = allRbs[i].isKinematic;
+            allRbs[i].isKinematic = true;
+        }
+
+        // Wait one frame for physics to settle
+        yield return new WaitForFixedUpdate();
+
+        // Find the Body (first rigidbody child) and compute offset
+        var bodyRb = allRbs.Length > 0 ? allRbs[0] : null;
+        if (bodyRb != null)
+        {
+            Vector3 offset = targetPos - bodyRb.position;
+            Debug.Log($"[MazeGame] Teleport: target={targetPos}, bodyBefore={bodyRb.position}, offset={offset}");
+
+            // Only move the parent transform — children move with it automatically
+            transform.position += offset;
+
+            // Sync each rigidbody's physics position to match its new transform position
+            foreach (var rb in allRbs)
+            {
+                rb.position = rb.transform.position;
+            }
+
+            Debug.Log($"[MazeGame] Teleport done: bodyAfter={bodyRb.position}, bodyTransform={bodyRb.transform.position}");
+        }
+
+        // Restore kinematic state and zero velocities
+        for (int i = 0; i < allRbs.Length; i++)
+        {
+            allRbs[i].isKinematic = wasKinematic[i];
+            allRbs[i].linearVelocity = Vector3.zero;
+            allRbs[i].angularVelocity = Vector3.zero;
+        }
+
+        teleportPending = false;
     }
 
     void InitStyles()
@@ -160,12 +237,6 @@ public class MazeGame : MonoBehaviour
         scoreStyle.fontSize = 24;
         scoreStyle.fontStyle = FontStyle.Bold;
         scoreStyle.normal.textColor = Color.white;
-
-        timerStyle = new GUIStyle(GUI.skin.label);
-        timerStyle.fontSize = 28;
-        timerStyle.fontStyle = FontStyle.Bold;
-        timerStyle.alignment = TextAnchor.MiddleRight;
-        timerStyle.normal.textColor = Color.white;
 
         winStyle = new GUIStyle(GUI.skin.label);
         winStyle.fontSize = 48;

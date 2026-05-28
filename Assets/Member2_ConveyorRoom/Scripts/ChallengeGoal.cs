@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 namespace TinyRobotEscape.Member2
 {
@@ -10,6 +11,7 @@ namespace TinyRobotEscape.Member2
         [SerializeField] private UnityEvent onChallengeCompleted = new UnityEvent();
 
         private bool completed;
+        private bool showReturnButton;
 
         public void Configure(ChallengeHud hud)
         {
@@ -30,13 +32,50 @@ namespace TinyRobotEscape.Member2
             }
 
             completed = true;
+            showReturnButton = true;
             if (challengeHud != null)
             {
                 challengeHud.ShowComplete();
             }
 
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
             Debug.Log("Member 2 conveyor challenge completed.");
             onChallengeCompleted.Invoke();
+        }
+
+        private GUIStyle btnStyle;
+
+        private void OnGUI()
+        {
+            if (!showReturnButton) return;
+
+            if (btnStyle == null)
+            {
+                btnStyle = new GUIStyle(GUI.skin.button)
+                {
+                    fontSize = 22,
+                    fontStyle = FontStyle.Bold
+                };
+            }
+
+            float w = 250f, h = 50f;
+            float x = Screen.width * 0.5f - w * 0.5f;
+            float y = Screen.height * 0.5f + 60f;
+
+            if (GUI.Button(new Rect(x, y, w, h), "RETURN TO MAZE", btnStyle))
+            {
+                var session = GameSessionData.GetOrCreate();
+                if (session.CurrentKeyIndex >= 0)
+                    session.MarkKeyCollected(session.CurrentKeyIndex);
+                session.ReturningFromSubScene = true;
+
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                Time.timeScale = 1f;
+                SceneManager.LoadScene("Maze");
+            }
         }
     }
 }

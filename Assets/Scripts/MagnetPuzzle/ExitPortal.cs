@@ -57,10 +57,14 @@ public class ExitPortal : MonoBehaviour
             yield return null;
         }
 
-        // Load scene
-        if (!string.IsNullOrEmpty(nextScene))
-            SceneManager.LoadScene(nextScene);
-        else
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        // Mark key collected and return to maze
+        var session = GameSessionData.GetOrCreate();
+        if (session.CurrentKeyIndex >= 0)
+            session.MarkKeyCollected(session.CurrentKeyIndex);
+        session.ReturningFromSubScene = true;
+
+        // Destroy the fade canvas after the new scene loads
+        SceneManager.sceneLoaded += (scene, mode) => { Destroy(canvasGO); };
+        SceneManager.LoadScene("Maze");
     }
 }

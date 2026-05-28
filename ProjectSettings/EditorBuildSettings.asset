@@ -8,6 +8,15 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Maze.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/MagnetPuzzleRoom.unity
+    guid: 2f62bbf4dfeb34ebc81a94b297077593
+  - enabled: 1
+    path: Assets/Member1_LaserRoom/Scenes/LaserRoom.unity
+    guid: 9037b718c0cd0214c88fb365ddbf13c2
+  - enabled: 1
+    path: Assets/Member2_ConveyorRoom/Scenes/ConveyorChallengeRoom.unity
+    guid: e8206966c56134f898480073489c0f03
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
