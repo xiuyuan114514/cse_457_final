@@ -44,6 +44,8 @@ public class MagneticCoreController : MonoBehaviour
 
         if (distance < stopDistance)
         {
+            coreRb.position = currentTarget.position;
+            transform.position = currentTarget.position;
             coreRb.linearVelocity = Vector3.zero;
             coreRb.angularVelocity = Vector3.zero;
             currentTarget = null;
@@ -62,6 +64,12 @@ public class MagneticCoreController : MonoBehaviour
     public void SetMagnetTarget(Transform target)
     {
         currentTarget = target;
+    }
+
+    public void SetHomeTransform(Vector3 position, Quaternion rotation)
+    {
+        startPosition = position;
+        startRotation = rotation;
     }
 
     public void ResetCore()

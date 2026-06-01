@@ -10,6 +10,7 @@ public class MagnetButton : MonoBehaviour
     [Header("Connections")]
     public MagneticCoreController magneticCore;
     public Transform magnetTarget;
+    public int buttonIndex;
 
     [Header("Plate Feel")]
     [Tooltip("How far the plate sinks when pressed (world units)")]
@@ -82,6 +83,9 @@ public class MagnetButton : MonoBehaviour
         if (magneticCore != null && magnetTarget != null)
         {
             magneticCore.SetMagnetTarget(magnetTarget);
+            var visuals = FindFirstObjectByType<MagnetRoomVisuals>();
+            if (visuals != null)
+                visuals.FlashButton(buttonIndex);
             Debug.Log($"[MagnetButton] Plate activated: {gameObject.name}");
         }
     }
