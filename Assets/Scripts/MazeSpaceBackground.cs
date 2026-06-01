@@ -18,8 +18,9 @@ public class MazeSpaceBackground : MonoBehaviour
     public float starMaxSize = 1.6f;
 
     [Header("Nebula Fog")]
-    public bool enableFog = true;
-    public Color fogColor = new Color(0.02f, 0.005f, 0.04f, 1f);
+    // Matches LaserRoom scene: fog disabled.
+    public bool enableFog = false;
+    public Color fogColor = new Color(0.01f, 0.015f, 0.025f, 1f);
     public float fogDensity = 0.008f;
 
     // Runtime references
@@ -27,7 +28,6 @@ public class MazeSpaceBackground : MonoBehaviour
     Material domeMaterial;
     Material starMaterialWhite;
     Material starMaterialBlue;
-    Material starMaterialOrange;
 
     void Start()
     {
@@ -44,16 +44,19 @@ public class MazeSpaceBackground : MonoBehaviour
         if (cam == null) return;
 
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color(0.001f, 0.001f, 0.005f, 1f);
+        cam.backgroundColor = new Color(0.002f, 0.004f, 0.01f, 1f);
         cam.farClipPlane = Mathf.Max(cam.farClipPlane, domeRadius * 2f);
     }
 
     void SetupAmbientLighting()
     {
-        RenderSettings.skybox = null;
-        RenderSettings.ambientMode = AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.03f, 0.03f, 0.06f, 1f);
-        RenderSettings.reflectionIntensity = 0.1f;
+        // Matches LaserRoom scene's gradient ambient lighting.
+        RenderSettings.ambientMode = AmbientMode.Trilight;
+        RenderSettings.ambientSkyColor = new Color(0.035f, 0.05f, 0.085f, 1f);
+        RenderSettings.ambientEquatorColor = new Color(0.014f, 0.02f, 0.035f, 1f);
+        RenderSettings.ambientGroundColor = new Color(0.005f, 0.006f, 0.012f, 1f);
+        RenderSettings.ambientIntensity = 0.45f;
+        RenderSettings.reflectionIntensity = 0.45f;
     }
 
     void SetupFog()
@@ -81,8 +84,9 @@ public class MazeSpaceBackground : MonoBehaviour
         if (shader == null) shader = Shader.Find("Unlit/Color");
 
         domeMaterial = new Material(shader);
-        domeMaterial.SetColor("_BaseColor", new Color(0.003f, 0.003f, 0.012f, 1f));
-        domeMaterial.SetColor("_Color", new Color(0.003f, 0.003f, 0.012f, 1f));
+        // Matches LaserRoom M1_StarDome material: near-black deep blue.
+        domeMaterial.SetColor("_BaseColor", new Color(0.002f, 0.004f, 0.012f, 1f));
+        domeMaterial.SetColor("_Color", new Color(0.002f, 0.004f, 0.012f, 1f));
         // Render behind everything
         domeMaterial.renderQueue = (int)RenderQueue.Background;
 
@@ -93,10 +97,9 @@ public class MazeSpaceBackground : MonoBehaviour
 
     void CreateStars()
     {
-        // Prepare star materials with different colors
-        starMaterialWhite = CreateStarMaterial(new Color(1f, 1f, 1f, 1f), 2f);
-        starMaterialBlue = CreateStarMaterial(new Color(0.6f, 0.7f, 1f, 1f), 2.5f);
-        starMaterialOrange = CreateStarMaterial(new Color(1f, 0.7f, 0.3f, 1f), 1.8f);
+        // Prepare star materials matching LaserRoom (M1_StarWhite / M1_StarBlue emission).
+        starMaterialWhite = CreateStarMaterial(new Color(2.2f, 2.4f, 2.6f, 1f), 1f);
+        starMaterialBlue = CreateStarMaterial(new Color(0.85f, 1.45f, 2.8f, 1f), 1f);
 
         var starsParent = new GameObject("Stars");
         starsParent.transform.SetParent(transform, false);
@@ -124,12 +127,10 @@ public class MazeSpaceBackground : MonoBehaviour
             mr.shadowCastingMode = ShadowCastingMode.Off;
             mr.receiveShadows = false;
 
-            // Color distribution: 70% white, 15% blue, 15% orange
+            // Color distribution: 75% white, 25% blue (matches LaserRoom palette)
             float roll = Random.value;
-            if (roll < 0.15f)
+            if (roll < 0.25f)
                 mr.sharedMaterial = starMaterialBlue;
-            else if (roll < 0.30f)
-                mr.sharedMaterial = starMaterialOrange;
             else
                 mr.sharedMaterial = starMaterialWhite;
         }
