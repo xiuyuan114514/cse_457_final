@@ -5,7 +5,7 @@ namespace TinyRobotEscape.Member2
 {
     public class ChallengeHud : MonoBehaviour
     {
-        private const string DefaultStatus = "Avoid red hazards and use moving platforms.";
+        private const string DefaultStatus = "Avoid red security blocks. Stay on the route.";
 
         [SerializeField] private Text statusText;
         [SerializeField] private Text objectiveText;
@@ -13,6 +13,24 @@ namespace TinyRobotEscape.Member2
         [SerializeField] private float temporaryMessageDuration = 1.6f;
 
         private float clearTemporaryAt;
+        private Image centerMessagePanel;
+        private Image objectivePanel;
+
+        private void Awake()
+        {
+            StyleHudText(objectiveText, 20, FontStyle.Bold, new Color(0.74f, 0.95f, 1f));
+            StyleHudText(statusText, 16, FontStyle.Normal, new Color(0.86f, 0.9f, 0.98f));
+            StyleHudText(centerMessageText, 34, FontStyle.Bold, new Color(0.93f, 1f, 0.94f));
+
+            objectivePanel = CreatePanel("ObjectivePanel", objectiveText, new Vector2(34f, 58f), new Color(0.01f, 0.025f, 0.055f, 0.64f));
+            centerMessagePanel = CreatePanel("CenterMessagePanel", centerMessageText, new Vector2(56f, 36f), new Color(0.01f, 0.025f, 0.055f, 0.78f));
+            if (centerMessagePanel != null)
+            {
+                centerMessagePanel.enabled = false;
+            }
+
+            KeepTextAbovePanels();
+        }
 
         public void Configure(Text status, Text objective)
         {
@@ -30,8 +48,8 @@ namespace TinyRobotEscape.Member2
         private void Start()
         {
             ShowCenterMessage(string.Empty);
-            ShowObjective("Reach the green exit. WASD / Arrow Keys move, mouse looks, Q/E turns.");
-            ShowStatus("First-person conveyor challenge started.");
+            ShowObjective("CONVEYOR ROUTE // REACH THE GREEN EXIT");
+            ShowStatus("WASD / Arrows move   Mouse looks   Q/E turns");
         }
 
         private void Update()
@@ -50,6 +68,8 @@ namespace TinyRobotEscape.Member2
             {
                 objectiveText.text = message;
             }
+
+            RefreshObjectivePanel();
         }
 
         public void ShowStatus(string message)
@@ -58,6 +78,8 @@ namespace TinyRobotEscape.Member2
             {
                 statusText.text = message;
             }
+
+            RefreshObjectivePanel();
         }
 
         public void ShowCenterMessage(string message)
@@ -67,6 +89,13 @@ namespace TinyRobotEscape.Member2
                 centerMessageText.text = message;
                 centerMessageText.enabled = !string.IsNullOrEmpty(message);
             }
+
+            if (centerMessagePanel != null)
+            {
+                centerMessagePanel.enabled = !string.IsNullOrEmpty(message);
+            }
+
+            KeepTextAbovePanels();
         }
 
         public void ShowFailure()
@@ -76,12 +105,12 @@ namespace TinyRobotEscape.Member2
 
         public void ShowHazardFailure()
         {
-            ShowFailure("Hit a red obstacle.\nRestarting from the start.");
+            ShowFailure("SYSTEM RESET\nRed obstacle contact detected.");
         }
 
         public void ShowFallFailure()
         {
-            ShowFailure("Fell off the course.\nRestarting from the start.");
+            ShowFailure("SYSTEM RESET\nRoute boundary lost.");
         }
 
         private void ShowFailure(string message)
@@ -95,8 +124,87 @@ namespace TinyRobotEscape.Member2
         {
             ShowStatus(string.Empty);
             ShowObjective(string.Empty);
-            ShowCenterMessage("Goal reached.\nReady to connect this room to the main maze.");
+            ShowCenterMessage("ROOM CLEARED\nReturn route unlocked.");
             clearTemporaryAt = 0f;
+        }
+
+        private static void StyleHudText(Text text, int size, FontStyle style, Color color)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.fontSize = size;
+            text.fontStyle = style;
+            text.color = color;
+        }
+
+        private static Image CreatePanel(string name, Text targetText, Vector2 padding, Color color)
+        {
+            if (targetText == null || targetText.transform.parent == null)
+            {
+                return null;
+            }
+
+            RectTransform targetRect = targetText.rectTransform;
+            GameObject panelObject = new GameObject(name);
+            panelObject.transform.SetParent(targetText.transform.parent, false);
+            panelObject.transform.SetSiblingIndex(targetText.transform.GetSiblingIndex());
+
+            RectTransform panelRect = panelObject.AddComponent<RectTransform>();
+            panelRect.anchorMin = targetRect.anchorMin;
+            panelRect.anchorMax = targetRect.anchorMax;
+            panelRect.pivot = targetRect.pivot;
+            panelRect.anchoredPosition = targetRect.anchoredPosition;
+            panelRect.sizeDelta = targetRect.sizeDelta + padding;
+
+            Image image = panelObject.AddComponent<Image>();
+            image.color = color;
+            image.raycastTarget = false;
+
+            targetText.transform.SetAsLastSibling();
+            return image;
+        }
+
+        private void KeepTextAbovePanels()
+        {
+            if (objectivePanel != null)
+            {
+                objectivePanel.transform.SetAsFirstSibling();
+            }
+
+            if (centerMessagePanel != null)
+            {
+                centerMessagePanel.transform.SetAsFirstSibling();
+            }
+
+            if (objectiveText != null)
+            {
+                objectiveText.transform.SetAsLastSibling();
+            }
+
+            if (statusText != null)
+            {
+                statusText.transform.SetAsLastSibling();
+            }
+
+            if (centerMessageText != null)
+            {
+                centerMessageText.transform.SetAsLastSibling();
+            }
+        }
+
+        private void RefreshObjectivePanel()
+        {
+            if (objectivePanel == null)
+            {
+                return;
+            }
+
+            bool hasObjective = objectiveText != null && !string.IsNullOrEmpty(objectiveText.text);
+            bool hasStatus = statusText != null && !string.IsNullOrEmpty(statusText.text);
+            objectivePanel.enabled = hasObjective || hasStatus;
         }
     }
 }

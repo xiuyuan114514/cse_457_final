@@ -20,14 +20,14 @@ namespace TinyRobotEscape.Member2.Editor
             EnsureFolders();
             EnsurePlayerTag();
 
-            Material floor = CreateMaterial("M2_Floor", new Color(0.17f, 0.2f, 0.24f));
-            Material wall = CreateMaterial("M2_Wall", new Color(0.38f, 0.42f, 0.48f));
-            Material conveyor = CreateMaterial("M2_ConveyorBlue", new Color(0.03f, 0.5f, 0.85f));
-            Material platform = CreateMaterial("M2_PlatformYellow", new Color(0.96f, 0.77f, 0.25f));
-            Material hazard = CreateMaterial("M2_HazardRed", new Color(0.95f, 0.14f, 0.13f));
-            Material goal = CreateMaterial("M2_GoalGreen", new Color(0.12f, 0.75f, 0.3f));
-            Material robot = CreateMaterial("M2_RobotWhite", new Color(0.9f, 0.94f, 0.96f));
-            Material arrow = CreateMaterial("M2_ArrowWhite", Color.white);
+            Material floor = CreateMaterial("M2_Floor", new Color(0.035f, 0.055f, 0.085f), new Color(0f, 0.025f, 0.045f));
+            Material wall = CreateMaterial("M2_Wall", new Color(0.09f, 0.12f, 0.18f), new Color(0f, 0.04f, 0.08f));
+            Material conveyor = CreateMaterial("M2_ConveyorBlue", new Color(0.015f, 0.18f, 0.38f), new Color(0f, 0.35f, 0.95f));
+            Material platform = CreateMaterial("M2_PlatformYellow", new Color(0.92f, 0.66f, 0.2f), new Color(0.75f, 0.42f, 0.08f));
+            Material hazard = CreateMaterial("M2_HazardRed", new Color(0.86f, 0.08f, 0.07f), new Color(1.35f, 0.05f, 0.03f));
+            Material goal = CreateMaterial("M2_GoalGreen", new Color(0.04f, 0.72f, 0.32f), new Color(0f, 1.3f, 0.42f));
+            Material robot = CreateMaterial("M2_RobotWhite", new Color(0.84f, 0.92f, 1f), new Color(0.1f, 0.18f, 0.25f));
+            Material arrow = CreateMaterial("M2_ArrowWhite", new Color(0.88f, 0.96f, 1f), new Color(0.45f, 0.75f, 1.2f));
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "ConveyorChallengeRoom";
@@ -80,7 +80,7 @@ namespace TinyRobotEscape.Member2.Editor
             tagManager.ApplyModifiedProperties();
         }
 
-        private static Material CreateMaterial(string name, Color color)
+        private static Material CreateMaterial(string name, Color color, Color emission)
         {
             string path = $"{MaterialsPath}/{name}.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -91,6 +91,11 @@ namespace TinyRobotEscape.Member2.Editor
             }
 
             material.color = color;
+            material.SetColor("_BaseColor", color);
+            material.SetColor("_EmissionColor", emission);
+            material.EnableKeyword("_EMISSION");
+            material.SetFloat("_Smoothness", 0.72f);
+            material.SetFloat("_Metallic", 0.08f);
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -137,6 +142,7 @@ namespace TinyRobotEscape.Member2.Editor
             cameraObject.transform.position = player.TransformPoint(new Vector3(0f, 0.62f, 0.35f));
             Camera camera = cameraObject.AddComponent<Camera>();
             camera.fieldOfView = 72f;
+            camera.backgroundColor = new Color(0.002f, 0.004f, 0.01f);
             cameraObject.AddComponent<AudioListener>();
             FollowCamera follow = cameraObject.AddComponent<FollowCamera>();
             follow.Configure(player, new Vector3(0f, 0.62f, 0.35f));
@@ -152,8 +158,8 @@ namespace TinyRobotEscape.Member2.Editor
             canvasObject.AddComponent<CanvasScaler>();
             canvasObject.AddComponent<GraphicRaycaster>();
 
-            Text objective = CreateText("ObjectiveText", canvasObject.transform, new Vector2(24f, -24f), 20, TextAnchor.UpperLeft);
-            Text status = CreateText("StatusText", canvasObject.transform, new Vector2(24f, -58f), 18, TextAnchor.UpperLeft);
+            Text objective = CreateText("ObjectiveText", canvasObject.transform, new Vector2(34f, -30f), 20, FontStyle.Bold, new Color(0.74f, 0.95f, 1f), TextAnchor.UpperLeft);
+            Text status = CreateText("StatusText", canvasObject.transform, new Vector2(34f, -62f), 16, FontStyle.Normal, new Color(0.86f, 0.9f, 0.98f), TextAnchor.UpperLeft);
             Text centerMessage = CreateCenterText("CenterMessageText", canvasObject.transform);
 
             ChallengeHud hud = canvasObject.AddComponent<ChallengeHud>();
@@ -161,15 +167,16 @@ namespace TinyRobotEscape.Member2.Editor
             return hud;
         }
 
-        private static Text CreateText(string name, Transform parent, Vector2 anchoredPosition, int size, TextAnchor alignment)
+        private static Text CreateText(string name, Transform parent, Vector2 anchoredPosition, int size, FontStyle style, Color color, TextAnchor alignment)
         {
             GameObject textObject = new GameObject(name);
             textObject.transform.SetParent(parent);
             Text text = textObject.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = size;
+            text.fontStyle = style;
             text.alignment = alignment;
-            text.color = Color.white;
+            text.color = color;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -189,8 +196,9 @@ namespace TinyRobotEscape.Member2.Editor
             Text text = textObject.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = 34;
+            text.fontStyle = FontStyle.Bold;
             text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
+            text.color = new Color(0.93f, 1f, 0.94f);
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Overflow;
             text.enabled = false;
@@ -269,21 +277,26 @@ namespace TinyRobotEscape.Member2.Editor
 
         private static void BuildLights(Transform parent)
         {
-            RenderSettings.ambientLight = new Color(0.22f, 0.25f, 0.3f);
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.035f, 0.05f, 0.085f);
+            RenderSettings.fog = true;
+            RenderSettings.fogColor = new Color(0.01f, 0.015f, 0.025f);
+            RenderSettings.fogDensity = 0.018f;
 
             GameObject directional = new GameObject("Room_KeyLight");
             directional.transform.SetParent(parent);
             directional.transform.rotation = Quaternion.Euler(55f, -35f, 0f);
             Light keyLight = directional.AddComponent<Light>();
             keyLight.type = LightType.Directional;
-            keyLight.intensity = 1.1f;
+            keyLight.color = new Color(0.72f, 0.86f, 1f);
+            keyLight.intensity = 0.62f;
 
-            CreatePointLight("BlueConveyorLight", new Vector3(-3f, 3f, -4f), new Color(0.1f, 0.65f, 1f), parent);
-            CreatePointLight("RedHazardLight", new Vector3(0f, 3f, 7.5f), new Color(1f, 0.15f, 0.1f), parent);
-            CreatePointLight("GreenGoalLight", new Vector3(0f, 3f, 10.5f), new Color(0.25f, 1f, 0.35f), parent);
+            CreatePointLight("BlueConveyorLight", new Vector3(-3f, 3f, -4f), new Color(0.05f, 0.55f, 1f), 3.2f, parent);
+            CreatePointLight("RedHazardLight", new Vector3(0f, 3f, 7.5f), new Color(1f, 0.08f, 0.05f), 3.8f, parent);
+            CreatePointLight("GreenGoalLight", new Vector3(0f, 3f, 10.5f), new Color(0.05f, 1f, 0.38f), 3.8f, parent);
         }
 
-        private static void CreatePointLight(string name, Vector3 position, Color color, Transform parent)
+        private static void CreatePointLight(string name, Vector3 position, Color color, float intensity, Transform parent)
         {
             GameObject lightObject = new GameObject(name);
             lightObject.transform.SetParent(parent);
@@ -292,7 +305,7 @@ namespace TinyRobotEscape.Member2.Editor
             light.type = LightType.Point;
             light.color = color;
             light.range = 7f;
-            light.intensity = 2.2f;
+            light.intensity = intensity;
         }
 
         private static Transform CreateMarker(string name, Vector3 position, Transform parent)
