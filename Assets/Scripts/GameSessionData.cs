@@ -24,6 +24,9 @@ public class GameSessionData : MonoBehaviour
     // Whether we are returning from a sub-scene
     public bool ReturningFromSubScene = false;
 
+    // True only after the maze saved a real return pose before loading a challenge room.
+    public bool HasReturnPose = false;
+
     void Awake()
     {
         if (Instance != null && Instance != this)

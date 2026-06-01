@@ -15,9 +15,10 @@ public class SubSceneReturnHandler : MonoBehaviour
     public static void ReturnToMaze()
     {
         var session = GameSessionData.GetOrCreate();
-        if (session.CurrentKeyIndex >= 0)
+        bool hasMazeReturn = session.HasReturnPose && session.CurrentKeyIndex >= 0;
+        if (hasMazeReturn)
             session.MarkKeyCollected(session.CurrentKeyIndex);
-        session.ReturningFromSubScene = true;
+        session.ReturningFromSubScene = hasMazeReturn;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;

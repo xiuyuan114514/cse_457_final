@@ -74,7 +74,15 @@ public class SceneTransitionOverlay : MonoBehaviour
 
         // Load Maze scene and clean up
         SceneManager.sceneLoaded += OnSceneLoaded;
-        SceneManager.LoadScene("Maze");
+        if (Application.CanStreamedLevelBeLoaded("Maze"))
+        {
+            SceneManager.LoadScene("Maze");
+        }
+        else
+        {
+            Debug.LogWarning("[SceneTransitionOverlay] Maze scene name was not found in build settings; loading scene index 0.");
+            SceneManager.LoadScene(0);
+        }
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
