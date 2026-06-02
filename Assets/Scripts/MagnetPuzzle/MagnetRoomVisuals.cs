@@ -410,6 +410,7 @@ public class MagnetRoomVisuals : MonoBehaviour
 
         var button = plate.GetComponent<MagnetButton>();
         if (button == null) button = plate.AddComponent<MagnetButton>();
+        button.RefreshRestPosition();
         button.magneticCore = coreController;
         button.magnetTarget = target.transform;
         button.buttonIndex = index;

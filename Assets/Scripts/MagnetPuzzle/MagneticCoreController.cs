@@ -63,7 +63,12 @@ public class MagneticCoreController : MonoBehaviour
 
     public void SetMagnetTarget(Transform target)
     {
+        if (coreRb == null)
+            coreRb = GetComponent<Rigidbody>();
+
         currentTarget = target;
+        if (coreRb != null)
+            coreRb.WakeUp();
     }
 
     public void SetHomeTransform(Vector3 position, Quaternion rotation)

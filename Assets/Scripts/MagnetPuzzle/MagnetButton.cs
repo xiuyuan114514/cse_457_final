@@ -35,7 +35,7 @@ public class MagnetButton : MonoBehaviour
 
     void Start()
     {
-        restPosition  = transform.position;
+        RefreshRestPosition();
         plateRenderer = GetComponent<Renderer>();
         if (plateRenderer != null)
             plateMat = plateRenderer.material; // per-instance so colour doesn't bleed
@@ -88,5 +88,11 @@ public class MagnetButton : MonoBehaviour
                 visuals.FlashButton(buttonIndex);
             Debug.Log($"[MagnetButton] Plate activated: {gameObject.name}");
         }
+    }
+
+    public void RefreshRestPosition()
+    {
+        restPosition = transform.position;
+        playerOnPlate = false;
     }
 }
