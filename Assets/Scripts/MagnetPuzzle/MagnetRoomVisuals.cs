@@ -39,6 +39,11 @@ public class MagnetRoomVisuals : MonoBehaviour
     Renderer coreRenderer;
     Material coreMaterialInstance;
     bool puzzleComplete;
+    bool showCompletionPanel;
+    GUIStyle completionTitleStyle;
+    GUIStyle completionMessageStyle;
+    Texture2D completionPanelTexture;
+    Texture2D completionLineTexture;
 
     Material floorMat;
     Material wallMat;
@@ -882,51 +887,82 @@ public class MagnetRoomVisuals : MonoBehaviour
             coreLight.intensity = 4f;
         }
 
+        showCompletionPanel = true;
         UpdateInstructionText(true);
         StartCoroutine(ShowSuccessOverlay());
     }
 
     System.Collections.IEnumerator ShowSuccessOverlay()
     {
-        var canvasGO = new GameObject("SuccessOverlay");
-        var canvas = canvasGO.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 50;
-        canvasGO.AddComponent<UnityEngine.UI.CanvasScaler>();
-
-        var cg = canvasGO.AddComponent<CanvasGroup>();
-
-        var bgGO = new GameObject("BG");
-        bgGO.transform.SetParent(canvasGO.transform, false);
-        var bg = bgGO.AddComponent<UnityEngine.UI.Image>();
-        bg.color = new Color(0f, 0.12f, 0.08f, 0.82f);
-        bg.rectTransform.anchorMin = new Vector2(0.15f, 0.38f);
-        bg.rectTransform.anchorMax = new Vector2(0.85f, 0.62f);
-        bg.rectTransform.offsetMin = Vector2.zero;
-        bg.rectTransform.offsetMax = Vector2.zero;
-
-        var txtGO = new GameObject("SuccessText");
-        txtGO.transform.SetParent(canvasGO.transform, false);
-        var txt = txtGO.AddComponent<TextMeshProUGUI>();
-        txt.text = "<b>CHALLENGE COMPLETE</b>\n<size=62%>Core docked - exit door is open</size>";
-        txt.fontSize = 42;
-        txt.alignment = TextAlignmentOptions.Center;
-        txt.color = new Color(0.15f, 1f, 0.55f);
-        txt.rectTransform.anchorMin = new Vector2(0.1f, 0.35f);
-        txt.rectTransform.anchorMax = new Vector2(0.9f, 0.65f);
-        txt.rectTransform.offsetMin = Vector2.zero;
-        txt.rectTransform.offsetMax = Vector2.zero;
-
-        cg.alpha = 0f;
-        float t = 0f;
-        while (t < 1f) { t += Time.deltaTime * 2f; cg.alpha = t; yield return null; }
-
         yield return new WaitForSeconds(3.5f);
+        showCompletionPanel = false;
+    }
 
-        t = 1f;
-        while (t > 0f) { t -= Time.deltaTime * 1.5f; cg.alpha = t; yield return null; }
+    void OnGUI()
+    {
+        if (!Application.isPlaying || !showCompletionPanel)
+            return;
 
-        Destroy(canvasGO);
+        InitCompletionStyles();
+
+        float boxW = 420f;
+        float boxH = 168f;
+        float x = Screen.width * 0.5f - boxW * 0.5f;
+        float y = Screen.height * 0.5f - boxH * 0.5f;
+        var panelRect = new Rect(x, y, boxW, boxH);
+
+        GUI.DrawTexture(panelRect, completionPanelTexture);
+        DrawCompletionBorder(panelRect, new Color(0.15f, 0.92f, 1f, 0.92f), 2f);
+        DrawCompletionBorder(new Rect(x + 6f, y + 6f, boxW - 12f, boxH - 12f), new Color(0.15f, 0.92f, 1f, 0.32f), 1f);
+
+        completionTitleStyle.normal.textColor = new Color(0.2f, 1f, 0.58f);
+        GUI.Label(new Rect(x, y + 28f, boxW, 48f), "ROOM CLEARED", completionTitleStyle);
+
+        completionMessageStyle.normal.textColor = new Color(0.76f, 0.96f, 1f);
+        GUI.Label(new Rect(x + 28f, y + 82f, boxW - 56f, 30f), "Return route unlocked.", completionMessageStyle);
+        GUI.Label(new Rect(x + 28f, y + 112f, boxW - 56f, 26f), "Exit through the green bulkhead.", completionMessageStyle);
+    }
+
+    void InitCompletionStyles()
+    {
+        if (completionTitleStyle != null)
+            return;
+
+        completionPanelTexture = MakeCompletionTexture(new Color(0.005f, 0.012f, 0.028f, 0.985f));
+        completionLineTexture = MakeCompletionTexture(Color.white);
+
+        completionTitleStyle = new GUIStyle(GUIStyle.none)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 40,
+            fontStyle = FontStyle.Bold
+        };
+
+        completionMessageStyle = new GUIStyle(GUIStyle.none)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 20,
+            fontStyle = FontStyle.Bold
+        };
+    }
+
+    void DrawCompletionBorder(Rect rect, Color color, float thickness)
+    {
+        Color old = GUI.color;
+        GUI.color = color;
+        GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, thickness), completionLineTexture);
+        GUI.DrawTexture(new Rect(rect.x, rect.yMax - thickness, rect.width, thickness), completionLineTexture);
+        GUI.DrawTexture(new Rect(rect.x, rect.y, thickness, rect.height), completionLineTexture);
+        GUI.DrawTexture(new Rect(rect.xMax - thickness, rect.y, thickness, rect.height), completionLineTexture);
+        GUI.color = old;
+    }
+
+    Texture2D MakeCompletionTexture(Color color)
+    {
+        var tex = new Texture2D(1, 1, TextureFormat.RGBA32, false) { hideFlags = HideFlags.DontSave };
+        tex.SetPixel(0, 0, color);
+        tex.Apply();
+        return tex;
     }
 
     public void FlashButton(int buttonIndex)
