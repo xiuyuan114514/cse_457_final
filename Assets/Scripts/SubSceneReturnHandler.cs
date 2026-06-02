@@ -24,7 +24,7 @@ public class SubSceneReturnHandler : MonoBehaviour
         Cursor.visible = false;
         Time.timeScale = 1f;
 
-        // Show the robot_with_key image for 2 seconds, then load Maze
+        // Play the transition video, then load Maze (2s is a fallback if the video is missing)
         SceneTransitionOverlay.Show(2f);
     }
 }
