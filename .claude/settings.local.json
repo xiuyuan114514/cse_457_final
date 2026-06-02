@@ -6,7 +6,9 @@
       "Bash(git push:*)",
       "WebFetch(domain:courses.cs.washington.edu)",
       "Bash(grep -niE '_BaseColor|_EmissionColor:' Assets/Member1_LaserRoom/Materials/__TRACKED_VAR__.mat)",
-      "Bash(git rebase *)"
+      "Bash(git rebase *)",
+      "Bash(git branch *)",
+      "Bash(git stash *)"
     ]
   }
 }

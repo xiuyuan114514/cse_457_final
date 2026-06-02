@@ -25,6 +25,14 @@ public class MagnetRoomVisuals : MonoBehaviour
 
     const string GeneratedRootName = "Runtime_MagnetLab_Set";
 
+    // In edit mode we flag generated preview objects DontSave so they stay out of the
+    // saved scene file. At runtime we must NOT use those flags: DontSave objects survive
+    // scene loads, which would leave the magnet lab overlapping the Maze scene after exit.
+    HideFlags GeneratedHideFlags =>
+        Application.isPlaying
+            ? HideFlags.None
+            : (HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild);
+
     Light coreLight;
     Light dockLight;
     Light[] buttonLights;
@@ -119,7 +127,7 @@ public class MagnetRoomVisuals : MonoBehaviour
     {
         CreateRuntimeMaterials();
         var rootGO = new GameObject(GeneratedRootName);
-        rootGO.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+        rootGO.hideFlags = GeneratedHideFlags;
         labRoot = rootGO.transform;
 
         var coreController = magneticCore != null ? magneticCore.GetComponent<MagneticCoreController>() : null;
@@ -389,7 +397,7 @@ public class MagnetRoomVisuals : MonoBehaviour
         if (target == null)
         {
             target = new GameObject($"MagnetPoint_{id}");
-            target.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+            target.hideFlags = GeneratedHideFlags;
             target.transform.SetParent(labRoot);
         }
         target.transform.position = targetPosition;
@@ -416,7 +424,7 @@ public class MagnetRoomVisuals : MonoBehaviour
     void CreatePlateLabel(string name, string label, Vector3 platePosition)
     {
         var go = new GameObject(name);
-        go.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+        go.hideFlags = GeneratedHideFlags;
         go.transform.SetParent(labRoot);
         go.transform.position = platePosition + new Vector3(0f, 0.13f, 0f);
         go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
@@ -606,7 +614,7 @@ public class MagnetRoomVisuals : MonoBehaviour
     void PrepareGenerated(GameObject go, string name, Vector3 position, Vector3 scale, Quaternion rotation, Material mat)
     {
         go.name = name;
-        go.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+        go.hideFlags = GeneratedHideFlags;
         go.transform.position = position;
         go.transform.localScale = scale;
         go.transform.rotation = rotation;
@@ -793,7 +801,7 @@ public class MagnetRoomVisuals : MonoBehaviour
     Light CreatePointLight(string lightName, Vector3 position, Color color, float intensity, float range)
     {
         var go = new GameObject(lightName);
-        go.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+        go.hideFlags = GeneratedHideFlags;
         go.transform.position = position;
         if (labRoot != null)
             go.transform.SetParent(labRoot);

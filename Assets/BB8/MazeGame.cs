@@ -233,6 +233,7 @@ public class MazeGame : MonoBehaviour
                 session.ReturnPosition = keyWorldPos + Vector3.up * 2f;
                 session.ReturnRotation = Quaternion.identity;
                 session.CurrentKeyIndex = i;
+                session.HasReturnPose = true;
                 Debug.Log($"[MazeGame] Key {keyNames[i]} touched at worldPos={keyWorldPos}, saving returnPos={session.ReturnPosition}");
 
                 // Load the sub-scene
