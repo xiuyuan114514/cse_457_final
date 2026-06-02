@@ -212,6 +212,7 @@ public class MazeGame : MonoBehaviour
             gameLost = true;
             loseReason = "You fell off the maze!";
             Time.timeScale = 0f;
+            ShowEndScreenCursor();
         }
     }
 
@@ -253,6 +254,7 @@ public class MazeGame : MonoBehaviour
             {
                 gameWon = true;
                 Time.timeScale = 0f;
+                ShowEndScreenCursor();
             }
             else
             {
@@ -288,6 +290,15 @@ public class MazeGame : MonoBehaviour
         {
             DrawEndScreen("You Lose!", Color.red, loseReason);
         }
+    }
+
+    // Free the cursor so the player can click the end-screen buttons.
+    // The maze leaves the cursor locked/hidden during gameplay (e.g. set by
+    // SubSceneReturnHandler), so it must be released when the game ends.
+    void ShowEndScreenCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     void DrawEndScreen(string title, Color titleColor, string subtitle)
