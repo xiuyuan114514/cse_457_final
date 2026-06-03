@@ -1383,7 +1383,7 @@ GameObject:
   - component: {fileID: 347123472}
   - component: {fileID: 347123474}
   - component: {fileID: 347123473}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: LeftEyeSocket
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2382,7 +2382,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 4294967291
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -2405,7 +2405,7 @@ GameObject:
   - component: {fileID: 527642210}
   - component: {fileID: 527642212}
   - component: {fileID: 527642211}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: RightEyePupil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2495,7 +2495,7 @@ GameObject:
   - component: {fileID: 602116901}
   - component: {fileID: 602116903}
   - component: {fileID: 602116902}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3472,7 +3472,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 778908370}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 1.5, y: 0.6, z: -0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3483,7 +3483,7 @@ Transform:
   - {fileID: 259618852}
   - {fileID: 491975775}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -4387,7 +4387,7 @@ GameObject:
   - component: {fileID: 1035167812}
   - component: {fileID: 1035167814}
   - component: {fileID: 1035167813}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: RightEyeSocket
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5314,6 +5314,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1373648204}
+  - component: {fileID: 1373648205}
   m_Layer: 0
   m_Name: Maze
   m_TagString: Untagged
@@ -5355,6 +5356,25 @@ Transform:
   - {fileID: 490217709}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1373648205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1373648203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf4a2e44bf2194f4fb0b1280ffc257fa, type: 3}
+  m_Name: MazeSpaceBackground
+  m_EditorClassIdentifier: Assembly-CSharp::MazeSpaceBackground
+  domeRadius: 500
+  starCount: 1200
+  starMinSize: 0.4
+  starMaxSize: 1.6
+  enableFog: 0
+  fogColor: {r: 0.01, g: 0.015, b: 0.025, a: 1}
+  fogDensity: 0.008
 --- !u!21 &1406372806
 Material:
   serializedVersion: 8
@@ -5488,7 +5508,7 @@ GameObject:
   - component: {fileID: 1448122540}
   - component: {fileID: 1448122542}
   - component: {fileID: 1448122541}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: LeftEyePupil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
