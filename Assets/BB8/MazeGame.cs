@@ -31,8 +31,8 @@ public class MazeGame : MonoBehaviour
 
     const string ImportedKeyResourcePath = "OpenGameArt/KeyLowPoly/key";
     const string ImportedKeyVisualName = "ImportedLowPolyKeyVisual";
-    const float ImportedKeyTargetHeight = 1.35f;
-    const float ImportedKeyGroundClearance = 0.01f;
+    const float ImportedKeyTargetHeight = 1.5f;
+    const float ImportedKeyGroundClearance = 0.34f;
     static Material importedKeyMaterial;
 
     // True while waiting for delayed teleport — suppresses fall detection
