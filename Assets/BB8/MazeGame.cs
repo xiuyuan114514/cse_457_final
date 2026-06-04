@@ -448,8 +448,32 @@ public class MazeGame : MonoBehaviour
         if (!showBriefing)
             return;
 
+        const float pad = 38f;
+        const string missionText = "Recover 3 station keys from linked challenge rooms. Each key opens a specialized room; complete it, return to the maze, then find the next key. Bring all keys to the exit bay to finish the protocol.";
+        const string controlsText = "WASD / Arrow Keys: move     Mouse: look\nTouch a key to enter a challenge room. Do not fall from the maze platform.";
+        const string statusText = "Station link ready. Start when you are oriented.";
+
         float panelW = Mathf.Min(760f, Screen.width - 48f);
-        float panelH = Mathf.Min(520f, Screen.height - 48f);
+        float textW = panelW - pad * 2f;
+
+        // Measure wrapped body blocks so the panel can be sized to its content.
+        // This keeps the layout flowing top-down: nothing is anchored to the panel
+        // bottom, so the controls and footer can never collide on a short window.
+        float missionH = introBodyStyle.CalcHeight(new GUIContent(missionText), textW);
+        float controlsH = introBodyStyle.CalcHeight(new GUIContent(controlsText), textW);
+
+        float titleTop = 28f;
+        float titleH = 50f;
+        float divider1Y = titleTop + titleH + 14f;
+        float missionHeaderY = divider1Y + 18f;
+        float missionBodyY = missionHeaderY + 30f;
+        float controlsHeaderY = missionBodyY + missionH + 22f;
+        float controlsBodyY = controlsHeaderY + 30f;
+        float divider2Y = controlsBodyY + controlsH + 18f;
+        float footerY = divider2Y + 18f;
+        float buttonH = 48f;
+        float panelH = footerY + buttonH + 24f;
+
         float panelX = Screen.width * 0.5f - panelW * 0.5f;
         float panelY = Screen.height * 0.5f - panelH * 0.5f;
         float appear = Mathf.Clamp01((elapsed - IntroCinematicDuration) / 0.8f);
@@ -460,25 +484,21 @@ public class MazeGame : MonoBehaviour
         GUI.color = new Color(1f, 1f, 1f, easedAppear);
         GUI.DrawTexture(panel, introPanelTexture);
         DrawFrame(panel, new Color(0f, 0.85f, 1f, 0.72f * easedAppear), 2f);
-        GUI.DrawTexture(new Rect(panel.x + 28f, panel.y + 92f, panel.width - 56f, 2f), introLineTexture);
-        GUI.DrawTexture(new Rect(panel.x + 28f, panel.y + panel.height - 96f, panel.width - 56f, 2f), introLineTexture);
+        GUI.DrawTexture(new Rect(panel.x + 28f, panel.y + divider1Y, panel.width - 56f, 2f), introLineTexture);
+        GUI.DrawTexture(new Rect(panel.x + 28f, panel.y + divider2Y, panel.width - 56f, 2f), introLineTexture);
 
-        GUI.Label(new Rect(panel.x + 34f, panel.y + 28f, panel.width - 68f, 52f), "NEBULA KEY PROTOCOL", introTitleStyle);
-        GUI.Label(new Rect(panel.x + 38f, panel.y + 110f, panel.width - 76f, 34f), "MISSION", introHeaderStyle);
-        GUI.Label(new Rect(panel.x + 38f, panel.y + 150f, panel.width - 76f, 92f),
-            "Recover 3 station keys from linked challenge rooms. Each key opens a specialized room; complete it, return to the maze, then find the next key. Bring all keys to the exit bay to finish the protocol.",
-            introBodyStyle);
+        GUI.Label(new Rect(panel.x + 34f, panel.y + titleTop, panel.width - 68f, titleH), "NEBULA KEY PROTOCOL", introTitleStyle);
+        GUI.Label(new Rect(panel.x + pad, panel.y + missionHeaderY, textW, 24f), "MISSION", introHeaderStyle);
+        GUI.Label(new Rect(panel.x + pad, panel.y + missionBodyY, textW, missionH), missionText, introBodyStyle);
 
-        GUI.Label(new Rect(panel.x + 38f, panel.y + 260f, panel.width - 76f, 32f), "CONTROLS", introHeaderStyle);
-        GUI.Label(new Rect(panel.x + 38f, panel.y + 298f, panel.width - 76f, 72f),
-            "WASD / Arrow Keys: move     Mouse: look\nTouch a key to enter a challenge room. Do not fall from the maze platform.",
-            introBodyStyle);
+        GUI.Label(new Rect(panel.x + pad, panel.y + controlsHeaderY, textW, 24f), "CONTROLS", introHeaderStyle);
+        GUI.Label(new Rect(panel.x + pad, panel.y + controlsBodyY, textW, controlsH), controlsText, introBodyStyle);
 
-        GUI.Label(new Rect(panel.x + 38f, panel.y + panel.height - 78f, panel.width - 76f, 28f),
-            "Station link ready. Start when you are oriented.",
+        GUI.Label(new Rect(panel.x + pad, panel.y + footerY + 12f, textW - 210f, 28f),
+            statusText,
             introSmallStyle);
 
-        Rect buttonRect = new Rect(panel.x + panel.width - 238f, panel.y + panel.height - 78f, 190f, 48f);
+        Rect buttonRect = new Rect(panel.x + panel.width - 238f, panel.y + footerY, 190f, buttonH);
         GUI.DrawTexture(buttonRect, introButtonTexture);
         if (GUI.Button(buttonRect, "START GAME", buttonStyle))
         {
