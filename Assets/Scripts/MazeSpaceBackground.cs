@@ -66,8 +66,20 @@ public class MazeSpaceBackground : MonoBehaviour
         SetupAmbientLighting();
         SetupFog();
         ClearEnvironmentVisuals();
-        CreateStarDome();
-        CreateStars();
+
+        // The space backdrop is purely cosmetic. Isolate it so a failure here
+        // (e.g. a stripped shader in a player build) can never abort the
+        // gameplay-critical maze rebuild and leave the level pitch black.
+        try
+        {
+            CreateStarDome();
+            CreateStars();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"MazeSpaceBackground: skipped space backdrop ({e.Message})");
+        }
+
         CreateMazeVisualPolish();
     }
 
