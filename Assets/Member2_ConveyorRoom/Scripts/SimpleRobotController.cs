@@ -8,8 +8,8 @@ namespace TinyRobotEscape.Member2
     [RequireComponent(typeof(Rigidbody))]
     public class SimpleRobotController : MonoBehaviour
     {
-        [SerializeField] private float moveForce = 22f;
-        [SerializeField] private float maxSpeed = 6.5f;
+        [SerializeField] private float moveForce = 14f;
+        [SerializeField] private float maxSpeed = 4.2f;
         [SerializeField] private float lookSensitivity = 0.12f;
         [SerializeField] private float keyboardTurnSpeed = 85f;
         [SerializeField] private Transform cameraReference;

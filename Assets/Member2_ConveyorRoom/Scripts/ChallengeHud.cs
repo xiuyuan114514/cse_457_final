@@ -5,7 +5,7 @@ namespace TinyRobotEscape.Member2
 {
     public class ChallengeHud : MonoBehaviour
     {
-        private const string DefaultStatus = "Avoid red security blocks. Stay on the route.";
+        private const string DefaultStatus = "Find the glowing arrow route. Wrong tiles push you off course.";
 
         [SerializeField] private Text statusText;
         [SerializeField] private Text objectiveText;
@@ -48,8 +48,8 @@ namespace TinyRobotEscape.Member2
         private void Start()
         {
             ShowCenterMessage(string.Empty);
-            ShowObjective("CONVEYOR ROUTE // REACH THE GREEN EXIT");
-            ShowStatus("WASD / Arrows move   Mouse looks   Q/E turns");
+            ShowObjective("CONVEYOR GRID // FOLLOW THE ARROWS TO EXIT");
+            ShowStatus("Follow the bright cyan arrows. Red tiles reset.");
         }
 
         private void Update()
@@ -105,12 +105,12 @@ namespace TinyRobotEscape.Member2
 
         public void ShowHazardFailure()
         {
-            ShowFailure("SYSTEM RESET\nRed obstacle contact detected.");
+            ShowFailure("SECURITY RESET\nRed patrol block contact detected.");
         }
 
         public void ShowFallFailure()
         {
-            ShowFailure("SYSTEM RESET\nRoute boundary lost.");
+            ShowFailure("VOID RESET\nRobot recovered to the launch deck.");
         }
 
         private void ShowFailure(string message)
@@ -124,7 +124,7 @@ namespace TinyRobotEscape.Member2
         {
             ShowStatus(string.Empty);
             ShowObjective(string.Empty);
-            ShowCenterMessage("ROOM CLEARED\nReturn route unlocked.");
+            ShowCenterMessage("ROOM CLEARED\nConveyor route solved.");
             clearTemporaryAt = 0f;
         }
 
