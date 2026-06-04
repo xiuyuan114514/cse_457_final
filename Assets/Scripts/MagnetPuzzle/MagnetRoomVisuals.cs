@@ -913,11 +913,12 @@ public class MagnetRoomVisuals : MonoBehaviour
             return;
 
         InitCompletionStyles();
+        ImguiScale.Begin();
 
         float boxW = 420f;
         float boxH = 168f;
-        float x = Screen.width * 0.5f - boxW * 0.5f;
-        float y = Screen.height * 0.5f - boxH * 0.5f;
+        float x = ImguiScale.Width * 0.5f - boxW * 0.5f;
+        float y = ImguiScale.Height * 0.5f - boxH * 0.5f;
         var panelRect = new Rect(x, y, boxW, boxH);
 
         GUI.DrawTexture(panelRect, completionPanelTexture);

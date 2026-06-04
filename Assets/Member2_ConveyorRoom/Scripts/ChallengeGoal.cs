@@ -61,9 +61,11 @@ namespace TinyRobotEscape.Member2
                 };
             }
 
+            ImguiScale.Begin();
+
             float w = 250f, h = 50f;
-            float x = Screen.width * 0.5f - w * 0.5f;
-            float y = Screen.height * 0.5f + 60f;
+            float x = ImguiScale.Width * 0.5f - w * 0.5f;
+            float y = ImguiScale.Height * 0.5f + 60f;
 
             if (GUI.Button(new Rect(x, y, w, h), "RETURN TO MAZE", btnStyle) && !returningToMaze)
             {

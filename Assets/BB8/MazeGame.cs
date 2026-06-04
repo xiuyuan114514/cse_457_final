@@ -307,6 +307,7 @@ public class MazeGame : MonoBehaviour
     void OnGUI()
     {
         InitStyles();
+        ImguiScale.Begin();
 
         if (showIntroScreen)
         {
@@ -332,7 +333,7 @@ public class MazeGame : MonoBehaviour
         if (messageTimer > 0 && !gameWon && !gameLost)
         {
             float w = 400, h = 40;
-            GUI.Label(new Rect(Screen.width / 2 - w / 2, 80, w, h), message, messageStyle);
+            GUI.Label(new Rect(ImguiScale.Width / 2 - w / 2, 80, w, h), message, messageStyle);
         }
 
         // Win screen
@@ -378,7 +379,7 @@ public class MazeGame : MonoBehaviour
         float cover = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / 0.34f));
         float reveal = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((elapsed - 0.34f) / 0.34f));
         float alpha = gameWon ? 1f - reveal : cover;
-        DrawTintedTexture(new Rect(0f, 0f, Screen.width, Screen.height), introPanelTexture, new Color(0f, 0f, 0f, alpha));
+        DrawTintedTexture(new Rect(0f, 0f, ImguiScale.Width, ImguiScale.Height), introPanelTexture, new Color(0f, 0f, 0f, alpha));
     }
 
     void DrawEndScreen(string title, Color titleColor, string subtitle)
@@ -388,11 +389,11 @@ public class MazeGame : MonoBehaviour
         Color accent = gameWon ? new Color(0.15f, 1f, 0.55f, 1f) : new Color(1f, 0.18f, 0.1f, 1f);
         Color oldColor = GUI.color;
 
-        DrawTintedTexture(new Rect(0f, 0f, Screen.width, Screen.height), introPanelTexture, new Color(0f, 0f, 0f, 0.36f * appear));
+        DrawTintedTexture(new Rect(0f, 0f, ImguiScale.Width, ImguiScale.Height), introPanelTexture, new Color(0f, 0f, 0f, 0.36f * appear));
 
-        float centerX = Screen.width * 0.5f;
-        float centerY = Screen.height * 0.46f;
-        float boxW = Mathf.Min(520f, Screen.width - 48f);
+        float centerX = ImguiScale.Width * 0.5f;
+        float centerY = ImguiScale.Height * 0.46f;
+        float boxW = Mathf.Min(520f, ImguiScale.Width - 48f);
         float boxH = 260f;
         float boxX = centerX - boxW * 0.5f;
         float boxY = centerY - boxH * 0.5f + Mathf.Lerp(42f, 0f, appear);
@@ -453,7 +454,7 @@ public class MazeGame : MonoBehaviour
         const string controlsText = "WASD / Arrow Keys: move     Mouse: look\nTouch a key to enter a challenge room. Do not fall from the maze platform.";
         const string statusText = "Station link ready. Start when you are oriented.";
 
-        float panelW = Mathf.Min(760f, Screen.width - 48f);
+        float panelW = Mathf.Min(760f, ImguiScale.Width - 48f);
         float textW = panelW - pad * 2f;
 
         // Measure wrapped body blocks so the panel can be sized to its content.
@@ -474,8 +475,8 @@ public class MazeGame : MonoBehaviour
         float buttonH = 48f;
         float panelH = footerY + buttonH + 24f;
 
-        float panelX = Screen.width * 0.5f - panelW * 0.5f;
-        float panelY = Screen.height * 0.5f - panelH * 0.5f;
+        float panelX = ImguiScale.Width * 0.5f - panelW * 0.5f;
+        float panelY = ImguiScale.Height * 0.5f - panelH * 0.5f;
         float appear = Mathf.Clamp01((elapsed - IntroCinematicDuration) / 0.8f);
         float easedAppear = Mathf.SmoothStep(0f, 1f, appear);
         Rect panel = new Rect(panelX, panelY + Mathf.Lerp(28f, 0f, easedAppear), panelW, panelH);
@@ -517,8 +518,8 @@ public class MazeGame : MonoBehaviour
 
     void DrawIntroCinematicHud(float elapsed)
     {
-        float width = Screen.width;
-        float height = Screen.height;
+        float width = ImguiScale.Width;
+        float height = ImguiScale.Height;
         float phaseTitle = Mathf.Clamp01(elapsed / 1.2f);
         float phaseProgress = Mathf.Clamp01((elapsed - 5.0f) / 2.2f);
 
@@ -562,8 +563,8 @@ public class MazeGame : MonoBehaviour
 
     void DrawIntroBriefingBackdrop()
     {
-        float width = Screen.width;
-        float height = Screen.height;
+        float width = ImguiScale.Width;
+        float height = ImguiScale.Height;
         DrawTintedTexture(new Rect(0f, 0f, width, height), introGlowTexture, new Color(0f, 0.12f, 0.16f, 0.14f));
         DrawFrame(new Rect(width * 0.12f, height * 0.14f, width * 0.76f, height * 0.72f), new Color(0f, 0.65f, 0.8f, 0.16f), 2f);
         DrawFrame(new Rect(width * 0.16f, height * 0.19f, width * 0.68f, height * 0.62f), new Color(1f, 0.72f, 0.18f, 0.10f), 1f);

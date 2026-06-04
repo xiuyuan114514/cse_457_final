@@ -120,14 +120,15 @@ public class LaserRoomGameManager : MonoBehaviour
             return;
 
         InitStyles();
+        ImguiScale.Begin();
 
         const float boxWidth = 360f;
         const float boxHeight = 166f;
-        float x = Screen.width * 0.5f - boxWidth * 0.5f;
-        float y = Screen.height * 0.5f - boxHeight * 0.5f;
+        float x = ImguiScale.Width * 0.5f - boxWidth * 0.5f;
+        float y = ImguiScale.Height * 0.5f - boxHeight * 0.5f;
         Rect panelRect = new Rect(x, y, boxWidth, boxHeight);
 
-        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), backdropTexture);
+        GUI.DrawTexture(new Rect(0f, 0f, ImguiScale.Width, ImguiScale.Height), backdropTexture);
         GUI.DrawTexture(panelRect, panelTexture);
         DrawBorder(panelRect, new Color(0.15f, 0.92f, 1f, 0.92f), 2f);
         DrawBorder(new Rect(x + 6f, y + 6f, boxWidth - 12f, boxHeight - 12f), new Color(0.15f, 0.92f, 1f, 0.32f), 1f);

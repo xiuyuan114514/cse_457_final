@@ -27,10 +27,11 @@ public class ReturnToMazeUI : MonoBehaviour
         if (!showButton) return;
 
         InitStyles();
+        ImguiScale.Begin();
 
         float boxW = 420f, boxH = 210f;
-        float x = Screen.width * 0.5f - boxW * 0.5f;
-        float y = Screen.height * 0.5f - boxH * 0.5f;
+        float x = ImguiScale.Width * 0.5f - boxW * 0.5f;
+        float y = ImguiScale.Height * 0.5f - boxH * 0.5f;
 
         GUI.DrawTexture(new Rect(x, y, boxW, boxH), panelTexture);
         DrawBorder(new Rect(x, y, boxW, boxH), new Color(0.15f, 0.92f, 1f, 0.92f), 2f);
