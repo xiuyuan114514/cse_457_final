@@ -6,7 +6,7 @@ public class LaserRoomBootstrap : MonoBehaviour
     public GameObject robotPrefab;
     public LaserRoomGameManager gameManager;
     public float robotHeight = 1.2f;
-    public float robotSpeedMultiplier = 10.8f;
+    public float robotSpeedMultiplier = 9.504f;
 
     [Header("Atmosphere")]
     public int extraStarCount = 120;
@@ -23,6 +23,9 @@ public class LaserRoomBootstrap : MonoBehaviour
     const float FloorY = 0.08f;
     const float WallHeight = 4.5f;
     const float WallThickness = 0.65f;
+    const float LaserRadius = 0.1122f;
+    const float LaserLengthScale = 1.04f;
+    const float LaserHeightDifferenceScale = 1.15f;
     const float CourseZMin = -46f;
     const float CourseZMax = 46f;
     const float EnvelopeZMin = -70f;
@@ -323,6 +326,24 @@ public class LaserRoomBootstrap : MonoBehaviour
         return value - Mathf.Floor(value);
     }
 
+    float SolidWallGrowth(string wallName, int cornerIndex)
+    {
+        unchecked
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < wallName.Length; i++)
+            {
+                hash ^= wallName[i];
+                hash *= 16777619u;
+            }
+
+            hash ^= (uint)(cornerIndex + 1) * 374761393u;
+            hash *= 668265263u;
+            float random01 = (hash & 0x00ffffff) / 16777215f;
+            return Mathf.Lerp(0.05f, 0.25f, random01);
+        }
+    }
+
     Mesh CreateStarMesh()
     {
         Mesh mesh = new Mesh { name = "M1_RuntimeStarMesh" };
@@ -410,17 +431,29 @@ public class LaserRoomBootstrap : MonoBehaviour
 
     void CreateCurvedLaneLasers(Transform parent, string laneName, float centerX, float halfWidth, float phase, float[] zValues, float[] leftHeights, float[] rightHeights)
     {
+        float scaledHalfWidth = halfWidth * LaserLengthScale;
         for (int i = 0; i < zValues.Length; i++)
         {
             float z = zValues[i];
             float curve = Mathf.Sin(z * 0.055f + phase) * 3.2f;
             float diagonal = (i % 2 == 0 ? 0.55f : -0.45f);
-            float leftX = centerX + curve - halfWidth;
-            float rightX = centerX + curve + halfWidth;
+            float leftX = centerX + curve - scaledHalfWidth;
+            float rightX = centerX + curve + scaledHalfWidth;
+            float leftHeight = leftHeights[i];
+            float rightHeight = rightHeights[i];
+            ExpandLaserHeightDifference(ref leftHeight, ref rightHeight);
             CreateLaser(parent, $"{laneName}_Laser_{i + 1:00}",
-                new Vector3(leftX, robotHeight * leftHeights[i], z - diagonal),
-                new Vector3(rightX, robotHeight * rightHeights[i], z + diagonal));
+                new Vector3(leftX, robotHeight * leftHeight, z - diagonal),
+                new Vector3(rightX, robotHeight * rightHeight, z + diagonal));
         }
+    }
+
+    void ExpandLaserHeightDifference(ref float leftHeight, ref float rightHeight)
+    {
+        float center = (leftHeight + rightHeight) * 0.5f;
+        float halfDelta = (rightHeight - leftHeight) * 0.5f * LaserHeightDifferenceScale;
+        leftHeight = Mathf.Clamp(center - halfDelta, 0.6f, 1.4f);
+        rightHeight = Mathf.Clamp(center + halfDelta, 0.6f, 1.4f);
     }
 
     bool ContainsSegment(int[] segments, int segmentIndex)
@@ -455,6 +488,17 @@ public class LaserRoomBootstrap : MonoBehaviour
 
     void CreateIrregularWallSegment(Transform parent, string wallName, Vector3 center, float length, float thickness, float height, float yawDegrees, Material material, bool passThrough, bool bounce, float skew, float topTilt)
     {
+        bool growSolidWall = !passThrough && !bounce;
+        float growth0 = growSolidWall ? SolidWallGrowth(wallName, 0) : 0f;
+        float growth1 = growSolidWall ? SolidWallGrowth(wallName, 1) : 0f;
+        float growth2 = growSolidWall ? SolidWallGrowth(wallName, 2) : 0f;
+        float growth3 = growSolidWall ? SolidWallGrowth(wallName, 3) : 0f;
+        float maxGrowth = Mathf.Max(Mathf.Max(growth0, growth1), Mathf.Max(growth2, growth3));
+        float colliderHeight = growSolidWall
+            ? height * (1f + maxGrowth) + Mathf.Abs(topTilt) * 1.5f
+            : height;
+        center.y = colliderHeight * 0.5f;
+
         GameObject wall = new GameObject(wallName);
         wall.name = wallName;
         wall.transform.SetParent(parent, false);
@@ -467,8 +511,8 @@ public class LaserRoomBootstrap : MonoBehaviour
 
         float halfLength = length * 0.5f;
         float halfThickness = thickness * 0.5f;
-        float bottomY = -height * 0.5f;
-        float topY = height * 0.5f;
+        float bottomY = -colliderHeight * 0.5f;
+        float topY = growSolidWall ? bottomY + height : colliderHeight * 0.5f;
         float zSkew = Mathf.Clamp(skew, -0.45f, 0.45f) * thickness;
         float topShift = Mathf.Clamp(topTilt, -0.45f, 0.45f) * thickness;
 
@@ -478,10 +522,10 @@ public class LaserRoomBootstrap : MonoBehaviour
             new Vector3(halfLength, bottomY, -halfThickness - zSkew),
             new Vector3(halfLength * 0.96f, bottomY, halfThickness - zSkew * 0.5f),
             new Vector3(-halfLength * 1.04f, bottomY, halfThickness + zSkew * 0.5f),
-            new Vector3(-halfLength * 0.98f, topY + topTilt, -halfThickness + zSkew + topShift),
-            new Vector3(halfLength * 1.03f, topY - topTilt * 0.55f, -halfThickness - zSkew + topShift * 0.35f),
-            new Vector3(halfLength * 0.94f, topY + topTilt * 0.4f, halfThickness - zSkew * 0.45f - topShift),
-            new Vector3(-halfLength * 1.01f, topY - topTilt * 0.7f, halfThickness + zSkew * 0.55f - topShift * 0.4f)
+            new Vector3(-halfLength * 0.98f, topY + height * growth0 + topTilt, -halfThickness + zSkew + topShift),
+            new Vector3(halfLength * 1.03f, topY + height * growth1 - topTilt * 0.55f, -halfThickness - zSkew + topShift * 0.35f),
+            new Vector3(halfLength * 0.94f, topY + height * growth2 + topTilt * 0.4f, halfThickness - zSkew * 0.45f - topShift),
+            new Vector3(-halfLength * 1.01f, topY + height * growth3 - topTilt * 0.7f, halfThickness + zSkew * 0.55f - topShift * 0.4f)
         };
 
         int[] triangles =
@@ -506,7 +550,7 @@ public class LaserRoomBootstrap : MonoBehaviour
 
         if (boxCollider != null)
         {
-            boxCollider.size = new Vector3(length, height, thickness);
+            boxCollider.size = new Vector3(length, colliderHeight, thickness);
             boxCollider.center = Vector3.zero;
             boxCollider.sharedMaterial = runtimeLowFrictionMaterial;
         }
@@ -524,7 +568,7 @@ public class LaserRoomBootstrap : MonoBehaviour
         beamObject.transform.SetParent(parent, false);
 
         LaserBeam beam = beamObject.AddComponent<LaserBeam>();
-        beam.Configure(laserName, start, end, 0.11f, runtimeLaserMaterial, gameManager);
+        beam.Configure(laserName, start, end, LaserRadius, runtimeLaserMaterial, gameManager);
 
         CreateLaserEndpoint(parent, laserName + "_StartEmitter", start);
         CreateLaserEndpoint(parent, laserName + "_EndEmitter", end);
@@ -536,11 +580,14 @@ public class LaserRoomBootstrap : MonoBehaviour
         endpoint.name = endpointName;
         endpoint.transform.SetParent(parent, false);
         endpoint.transform.position = position;
-        endpoint.transform.localScale = Vector3.one * 0.55f;
+        endpoint.transform.localScale = Vector3.one * 0.4f;
 
         MeshRenderer renderer = endpoint.GetComponent<MeshRenderer>();
         if (renderer != null)
             renderer.sharedMaterial = runtimeLaserMaterial;
+
+        LaserPulseVisual pulseVisual = endpoint.AddComponent<LaserPulseVisual>();
+        pulseVisual.Configure(endpointName, runtimeLaserMaterial);
 
         Collider collider = endpoint.GetComponent<Collider>();
         if (collider != null)
@@ -592,7 +639,7 @@ public class LaserRoomBootstrap : MonoBehaviour
         runtimeLowFrictionMaterial = CreateLowFrictionMaterial();
 
         runtimeLaserMaterial = MakeMaterial(laserMaterial, "M1_RuntimeLaserRed",
-            new Color(1f, 0.03f, 0.015f, 1f), new Color(4.5f, 0.08f, 0.03f, 1f), 0f, 0.35f, false);
+            new Color(0.95f, 0.012f, 0.004f, 1f), new Color(9.5f, 0.08f, 0.015f, 1f), 0f, 0.16f, false);
         runtimeSolidWallMaterial = MakeMaterial(solidWallMaterial, "M1_RuntimeDeepBlueWall",
             new Color(0.015f, 0.055f, 0.18f, 1f), new Color(0.01f, 0.09f, 0.22f, 1f), 0.35f, 0.72f, false);
         runtimeGhostWallMaterial = MakeMaterial(ghostWallMaterial, "M1_RuntimeGhostMirrorWall",

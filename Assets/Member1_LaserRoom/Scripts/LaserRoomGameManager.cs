@@ -21,6 +21,7 @@ public class LaserRoomGameManager : MonoBehaviour
     GUIStyle messageStyle;
     GUIStyle buttonStyle;
     Texture2D panelTexture;
+    Texture2D backdropTexture;
     Texture2D buttonTexture;
     Texture2D buttonHoverTexture;
     Texture2D buttonActiveTexture;
@@ -126,6 +127,7 @@ public class LaserRoomGameManager : MonoBehaviour
         float y = Screen.height * 0.5f - boxHeight * 0.5f;
         Rect panelRect = new Rect(x, y, boxWidth, boxHeight);
 
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), backdropTexture);
         GUI.DrawTexture(panelRect, panelTexture);
         DrawBorder(panelRect, new Color(0.15f, 0.92f, 1f, 0.92f), 2f);
         DrawBorder(new Rect(x + 6f, y + 6f, boxWidth - 12f, boxHeight - 12f), new Color(0.15f, 0.92f, 1f, 0.32f), 1f);
@@ -166,6 +168,7 @@ public class LaserRoomGameManager : MonoBehaviour
         if (titleStyle != null)
             return;
 
+        backdropTexture = MakeTexture(new Color(0.002f, 0.005f, 0.012f, 1f));
         panelTexture = MakeTexture(new Color(0.005f, 0.012f, 0.028f, 0.985f));
         buttonTexture = MakeTexture(new Color(0.008f, 0.08f, 0.12f, 1f));
         buttonHoverTexture = MakeTexture(new Color(0.018f, 0.2f, 0.28f, 1f));
