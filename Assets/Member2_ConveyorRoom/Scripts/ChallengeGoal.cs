@@ -12,6 +12,7 @@ namespace TinyRobotEscape.Member2
 
         private bool completed;
         private bool showReturnButton;
+        private bool returningToMaze;
 
         public void Configure(ChallengeHud hud)
         {
@@ -64,10 +65,17 @@ namespace TinyRobotEscape.Member2
             float x = Screen.width * 0.5f - w * 0.5f;
             float y = Screen.height * 0.5f + 60f;
 
-            if (GUI.Button(new Rect(x, y, w, h), "RETURN TO MAZE", btnStyle))
+            if (GUI.Button(new Rect(x, y, w, h), "RETURN TO MAZE", btnStyle) && !returningToMaze)
             {
-                showReturnButton = false; // Hide the OnGUI button immediately
-                SubSceneReturnHandler.ReturnToMaze();
+                returningToMaze = true;
+                showReturnButton = false;
+                if (challengeHud != null)
+                {
+                    challengeHud.ShowCenterMessage(string.Empty);
+                    challengeHud.ShowStatus(string.Empty);
+                    challengeHud.ShowObjective(string.Empty);
+                }
+                SubSceneReturnHandler.ReturnToMaze(0.35f);
             }
         }
     }

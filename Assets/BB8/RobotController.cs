@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 public class RobotController : MonoBehaviour
 {
     [Header("Movement")]
-    public float Speed = 10f;
+    public float Speed = 24f;
     public float JumpForce = 5f;
     public float JumpDelay = 1f;
 
@@ -76,7 +76,13 @@ public class RobotController : MonoBehaviour
         if (CameraTransform != null)
         {
             cam = CameraTransform.GetComponent<Camera>();
-            if (cam != null) cam.nearClipPlane = 0.01f;
+            if (cam != null)
+            {
+                cam.nearClipPlane = 0.01f;
+                if (cam.cullingMask == (1 << MazeCinematicSet.CinematicLayer) || cam.cullingMask == 0)
+                    cam.cullingMask = ~0;
+                cam.cullingMask &= ~(1 << MazeCinematicSet.CinematicLayer);
+            }
         }
     }
 
@@ -119,6 +125,7 @@ public class RobotController : MonoBehaviour
     void FixedUpdate()
     {
         if (bodyRb == null) return;
+        if (bodyRb.isKinematic) return;
 
         // Movement based on head facing direction (first person)
         Vector3 moveForce = Vector3.zero;
@@ -193,7 +200,7 @@ public class RobotController : MonoBehaviour
         Vector3 bodyCenter = Body.transform.position;
         Vector3 dir = eyePos - bodyCenter;
         float dist = dir.magnitude;
-        if (Physics.Raycast(bodyCenter, dir.normalized, out RaycastHit hit, dist))
+        if (dist > 0.001f && Physics.Raycast(bodyCenter, dir.normalized, out RaycastHit hit, dist))
         {
             // Pull camera back in front of the wall
             eyePos = hit.point - dir.normalized * 0.05f;

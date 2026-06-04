@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 public class ReturnToMazeUI : MonoBehaviour
 {
     bool showButton = false;
+    bool returning = false;
     GUIStyle buttonStyle;
     GUIStyle titleStyle;
     GUIStyle messageStyle;
@@ -41,7 +42,7 @@ public class ReturnToMazeUI : MonoBehaviour
         GUI.Label(new Rect(x + 32f, y + 90f, boxW - 64f, 34f), "Objective achieved!", messageStyle);
 
         Rect btnRect = new Rect(x + 110f, y + 138f, 200f, 46f);
-        if (GUI.Button(btnRect, "RETURN TO MAZE", buttonStyle))
+        if (!returning && GUI.Button(btnRect, "RETURN TO MAZE", buttonStyle))
         {
             ReturnToMaze();
         }
@@ -49,8 +50,9 @@ public class ReturnToMazeUI : MonoBehaviour
 
     void ReturnToMaze()
     {
-        showButton = false; // Hide the OnGUI panel immediately
-        SubSceneReturnHandler.ReturnToMaze();
+        returning = true;
+        showButton = false;
+        SubSceneReturnHandler.ReturnToMaze(0.35f);
     }
 
     void InitStyles()

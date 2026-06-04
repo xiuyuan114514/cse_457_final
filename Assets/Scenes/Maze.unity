@@ -834,7 +834,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 75ac83f9948653748b6df68488cacd25, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::KeyRotator
   rotateSpeed: 90
   bobSpeed: 2
@@ -3421,6 +3421,7 @@ GameObject:
   - component: {fileID: 778908373}
   - component: {fileID: 778908372}
   - component: {fileID: 778908371}
+  - component: {fileID: 778908374}
   m_Layer: 0
   m_Name: Robot
   m_TagString: Untagged
@@ -3455,7 +3456,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 774c59cecfc31b34880246e9d68e7c63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobotController
-  Speed: 20
+  Speed: 24
   JumpForce: 5
   JumpDelay: 1
   InitialYaw: 90
@@ -3464,6 +3465,18 @@ MonoBehaviour:
   LeftArm: {fileID: 0}
   RightArm: {fileID: 0}
   CameraTransform: {fileID: 0}
+--- !u!114 &778908374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 778908370}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79beffd3395344cc97c7772a63023f2c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::MazeIntroPreview
 --- !u!4 &778908373
 Transform:
   m_ObjectHideFlags: 0
@@ -5315,6 +5328,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1373648204}
   - component: {fileID: 1373648205}
+  - component: {fileID: 1373648206}
   m_Layer: 0
   m_Name: Maze
   m_TagString: Untagged
@@ -5375,6 +5389,18 @@ MonoBehaviour:
   enableFog: 0
   fogColor: {r: 0.01, g: 0.015, b: 0.025, a: 1}
   fogDensity: 0.008
+--- !u!114 &1373648206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1373648203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e16b03e52b6449d8ef645384ed39f3a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::MazeGuidanceSign
 --- !u!21 &1406372806
 Material:
   serializedVersion: 8

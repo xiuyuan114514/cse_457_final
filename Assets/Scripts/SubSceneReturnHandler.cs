@@ -12,7 +12,20 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public class SubSceneReturnHandler : MonoBehaviour
 {
-    public static void ReturnToMaze()
+    static bool returnInProgress = false;
+
+    public static void ReturnToMaze(float delayBeforeTransition = 0.35f)
+    {
+        if (returnInProgress) return;
+        returnInProgress = true;
+
+        var runner = new GameObject("SubSceneReturnDelay");
+        DontDestroyOnLoad(runner);
+        var handler = runner.AddComponent<SubSceneReturnHandler>();
+        handler.StartCoroutine(handler.ReturnAfterDelay(Mathf.Max(0f, delayBeforeTransition)));
+    }
+
+    System.Collections.IEnumerator ReturnAfterDelay(float delayBeforeTransition)
     {
         var session = GameSessionData.GetOrCreate();
         bool hasMazeReturn = session.HasReturnPose && session.CurrentKeyIndex >= 0;
@@ -24,7 +37,12 @@ public class SubSceneReturnHandler : MonoBehaviour
         Cursor.visible = false;
         Time.timeScale = 1f;
 
-        // Play the transition video, then load Maze (2s is a fallback if the video is missing)
-        SceneTransitionOverlay.Show(2f);
+        if (delayBeforeTransition > 0f)
+            yield return new WaitForSecondsRealtime(delayBeforeTransition);
+
+        // Play the shared sci-fi transition, then load Maze.
+        SceneTransitionOverlay.Show(2.8f);
+        returnInProgress = false;
+        Destroy(gameObject);
     }
 }

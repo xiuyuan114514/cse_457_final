@@ -4,6 +4,8 @@ using UnityEngine.SceneManagement;
 
 public class MazeGame : MonoBehaviour
 {
+    const string SkipIntroOnNextMazeStartKey = "MazeSkipIntroOnNextStart";
+
     [Header("Game Settings")]
     public int totalKeys = 3;
     public float fallThreshold = -5f;
@@ -19,6 +21,13 @@ public class MazeGame : MonoBehaviour
     int keysCollected = 0;
     bool gameWon = false;
     bool gameLost = false;
+    bool sceneTransitionPending = false;
+    bool showIntroScreen = false;
+    bool winTransitionPending = false;
+    float winTransitionStartRealtime = 0f;
+    float introStartRealtime = 0f;
+    float endScreenStartRealtime = 0f;
+    MazeCinematicSet activeCinematicSet;
     string loseReason = "";
     string message = "";
     float messageTimer = 0f;
@@ -44,6 +53,17 @@ public class MazeGame : MonoBehaviour
     GUIStyle loseStyle;
     GUIStyle messageStyle;
     GUIStyle buttonStyle;
+    GUIStyle introTitleStyle;
+    GUIStyle introHeaderStyle;
+    GUIStyle introBodyStyle;
+    GUIStyle introSmallStyle;
+    Texture2D introPanelTexture;
+    Texture2D introLineTexture;
+    Texture2D introButtonTexture;
+    Texture2D introGlowTexture;
+    Texture2D introDimLineTexture;
+
+    const float IntroCinematicDuration = 7.4f;
 
     void Start()
     {
@@ -66,6 +86,7 @@ public class MazeGame : MonoBehaviour
         }
 
         var session = GameSessionData.GetOrCreate();
+        bool returningFromSubScene = session.ReturningFromSubScene;
 
         // Restore state from session
         keysCollected = session.KeysCollected;
@@ -78,11 +99,28 @@ public class MazeGame : MonoBehaviour
         }
 
         // If returning from a sub-scene, teleport player back to saved position
-        if (session.ReturningFromSubScene)
+        if (returningFromSubScene)
         {
             session.ReturningFromSubScene = false;
             teleportPending = true;
             StartCoroutine(DelayedTeleport(session.ReturnPosition, session.ReturnRotation));
+        }
+        else if (keysCollected == 0)
+        {
+            bool skipIntro = PlayerPrefs.GetInt(SkipIntroOnNextMazeStartKey, 0) == 1;
+            if (skipIntro)
+            {
+                PlayerPrefs.DeleteKey(SkipIntroOnNextMazeStartKey);
+            }
+            else
+            {
+                showIntroScreen = true;
+                introStartRealtime = Time.realtimeSinceStartup;
+                activeCinematicSet = new MazeCinematicSet("Runtime_MazeIntroCinematic3D", new Color(0f, 0.95f, 1f), null, true);
+                Time.timeScale = 0f;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
         }
     }
 
@@ -200,6 +238,7 @@ public class MazeGame : MonoBehaviour
 
     void Update()
     {
+        if (showIntroScreen) return;
         if (gameWon || gameLost || teleportPending) return;
 
         if (messageTimer > 0)
@@ -211,6 +250,8 @@ public class MazeGame : MonoBehaviour
         {
             gameLost = true;
             loseReason = "You fell off the maze!";
+            endScreenStartRealtime = Time.realtimeSinceStartup;
+            activeCinematicSet = new MazeCinematicSet("Runtime_MazeLoseCinematic3D", new Color(1f, 0.18f, 0.1f), null, true);
             Time.timeScale = 0f;
             ShowEndScreenCursor();
         }
@@ -218,7 +259,7 @@ public class MazeGame : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (gameWon || gameLost) return;
+        if (gameWon || gameLost || sceneTransitionPending) return;
 
         // Key touch → save position and teleport to sub-scene
         for (int i = 0; i < 3; i++)
@@ -241,7 +282,8 @@ public class MazeGame : MonoBehaviour
                 if (i < keyScenes.Length && !string.IsNullOrEmpty(keyScenes[i]))
                 {
                     Time.timeScale = 1f;
-                    SceneManager.LoadScene(keyScenes[i]);
+                    sceneTransitionPending = true;
+                    SceneTransitionOverlay.ShowToScene(keyScenes[i], 1.4f, true);
                 }
                 return;
             }
@@ -252,9 +294,7 @@ public class MazeGame : MonoBehaviour
         {
             if (keysCollected >= totalKeys)
             {
-                gameWon = true;
-                Time.timeScale = 0f;
-                ShowEndScreenCursor();
+                StartCoroutine(ShowWinAfterQuickTransition());
             }
             else
             {
@@ -268,9 +308,25 @@ public class MazeGame : MonoBehaviour
     {
         InitStyles();
 
-        // Key count - top left
-        GUI.Label(new Rect(20, 20, 300, 40),
-            "Keys: " + keysCollected + " / " + totalKeys, scoreStyle);
+        if (showIntroScreen)
+        {
+            DrawIntroScreen();
+            return;
+        }
+
+        if (!SceneTransitionOverlay.IsTransitioning && !winTransitionPending)
+        {
+            GUI.Label(new Rect(20, 20, 300, 40),
+                "Keys: " + keysCollected + " / " + totalKeys, scoreStyle);
+        }
+
+        if (winTransitionPending)
+        {
+            if (gameWon)
+                DrawEndScreen("You Win!", new Color(0.2f, 1f, 0.2f), "All keys collected!");
+            DrawWinQuickTransition();
+            return;
+        }
 
         // Temporary message
         if (messageTimer > 0 && !gameWon && !gameLost)
@@ -301,28 +357,212 @@ public class MazeGame : MonoBehaviour
         Cursor.visible = true;
     }
 
+    IEnumerator ShowWinAfterQuickTransition()
+    {
+        sceneTransitionPending = true;
+        winTransitionPending = true;
+        winTransitionStartRealtime = Time.realtimeSinceStartup;
+        yield return new WaitForSecondsRealtime(0.34f);
+        gameWon = true;
+        endScreenStartRealtime = Time.realtimeSinceStartup;
+        activeCinematicSet = new MazeCinematicSet("Runtime_MazeWinCinematic3D", new Color(0.15f, 1f, 0.55f), null, true);
+        Time.timeScale = 0f;
+        ShowEndScreenCursor();
+        yield return new WaitForSecondsRealtime(0.34f);
+        winTransitionPending = false;
+    }
+
+    void DrawWinQuickTransition()
+    {
+        float elapsed = Time.realtimeSinceStartup - winTransitionStartRealtime;
+        float cover = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / 0.34f));
+        float reveal = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((elapsed - 0.34f) / 0.34f));
+        float alpha = gameWon ? 1f - reveal : cover;
+        DrawTintedTexture(new Rect(0f, 0f, Screen.width, Screen.height), introPanelTexture, new Color(0f, 0f, 0f, alpha));
+    }
+
     void DrawEndScreen(string title, Color titleColor, string subtitle)
     {
-        float boxW = 400, boxH = 200;
-        float boxX = Screen.width / 2 - boxW / 2;
-        float boxY = Screen.height / 2 - boxH / 2;
+        float elapsed = Time.realtimeSinceStartup - endScreenStartRealtime;
+        float appear = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / 1.1f));
+        Color accent = gameWon ? new Color(0.15f, 1f, 0.55f, 1f) : new Color(1f, 0.18f, 0.1f, 1f);
+        Color oldColor = GUI.color;
 
-        GUI.Box(new Rect(boxX, boxY, boxW, boxH), "");
+        DrawTintedTexture(new Rect(0f, 0f, Screen.width, Screen.height), introPanelTexture, new Color(0f, 0f, 0f, 0.36f * appear));
+
+        float centerX = Screen.width * 0.5f;
+        float centerY = Screen.height * 0.46f;
+        float boxW = Mathf.Min(520f, Screen.width - 48f);
+        float boxH = 260f;
+        float boxX = centerX - boxW * 0.5f;
+        float boxY = centerY - boxH * 0.5f + Mathf.Lerp(42f, 0f, appear);
+        Rect panel = new Rect(boxX, boxY, boxW, boxH);
+
+        GUI.color = new Color(1f, 1f, 1f, appear);
+        GUI.DrawTexture(panel, introPanelTexture);
+        DrawFrame(panel, new Color(accent.r, accent.g, accent.b, 0.88f * appear), 2f);
 
         var titleStyle = gameWon ? winStyle : loseStyle;
         titleStyle.normal.textColor = titleColor;
-        GUI.Label(new Rect(boxX, boxY + 30, boxW, 60), title, titleStyle);
-        GUI.Label(new Rect(boxX, boxY + 80, boxW, 30), subtitle, messageStyle);
+        GUI.Label(new Rect(boxX, boxY + 38f, boxW, 66f), title, titleStyle);
+        GUI.Label(new Rect(boxX + 36f, boxY + 106f, boxW - 72f, 34f), subtitle, messageStyle);
 
-        if (GUI.Button(new Rect(boxX + boxW / 2 - 75, boxY + 130, 150, 40),
+        string systemLine = gameWon ? "MAZE ACCESS COMPLETE // ALL KEYS VERIFIED" : "SIGNAL LOST // ROUTE RESET REQUIRED";
+        GUI.Label(new Rect(boxX + 34f, boxY + 146f, boxW - 68f, 26f), systemLine, introSmallStyle);
+
+        GUI.color = oldColor;
+        if (GUI.Button(new Rect(boxX + boxW / 2 - 86f, boxY + 188f, 172f, 46f),
             "Play Again", buttonStyle))
         {
             Time.timeScale = 1f;
             // Reset session data on restart
             if (GameSessionData.Instance != null)
                 Destroy(GameSessionData.Instance.gameObject);
+            if (gameLost)
+            {
+                PlayerPrefs.SetInt(SkipIntroOnNextMazeStartKey, 1);
+                PlayerPrefs.Save();
+            }
+            if (activeCinematicSet != null)
+            {
+                activeCinematicSet.Dispose();
+                activeCinematicSet = null;
+            }
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
+    }
+
+    void DrawIntroScreen()
+    {
+        float elapsed = Time.realtimeSinceStartup - introStartRealtime;
+        bool showBriefing = elapsed >= IntroCinematicDuration;
+        if (showBriefing)
+        {
+            DrawIntroBriefingBackdrop();
+        }
+        else
+        {
+            DrawIntroCinematicHud(elapsed);
+        }
+
+        if (!showBriefing)
+            return;
+
+        float panelW = Mathf.Min(760f, Screen.width - 48f);
+        float panelH = Mathf.Min(520f, Screen.height - 48f);
+        float panelX = Screen.width * 0.5f - panelW * 0.5f;
+        float panelY = Screen.height * 0.5f - panelH * 0.5f;
+        float appear = Mathf.Clamp01((elapsed - IntroCinematicDuration) / 0.8f);
+        float easedAppear = Mathf.SmoothStep(0f, 1f, appear);
+        Rect panel = new Rect(panelX, panelY + Mathf.Lerp(28f, 0f, easedAppear), panelW, panelH);
+
+        Color oldColor = GUI.color;
+        GUI.color = new Color(1f, 1f, 1f, easedAppear);
+        GUI.DrawTexture(panel, introPanelTexture);
+        DrawFrame(panel, new Color(0f, 0.85f, 1f, 0.72f * easedAppear), 2f);
+        GUI.DrawTexture(new Rect(panel.x + 28f, panel.y + 92f, panel.width - 56f, 2f), introLineTexture);
+        GUI.DrawTexture(new Rect(panel.x + 28f, panel.y + panel.height - 96f, panel.width - 56f, 2f), introLineTexture);
+
+        GUI.Label(new Rect(panel.x + 34f, panel.y + 28f, panel.width - 68f, 52f), "NEBULA KEY PROTOCOL", introTitleStyle);
+        GUI.Label(new Rect(panel.x + 38f, panel.y + 110f, panel.width - 76f, 34f), "MISSION", introHeaderStyle);
+        GUI.Label(new Rect(panel.x + 38f, panel.y + 150f, panel.width - 76f, 92f),
+            "Recover 3 station keys from linked challenge rooms. Each key opens a specialized room; complete it, return to the maze, then find the next key. Bring all keys to the exit bay to finish the protocol.",
+            introBodyStyle);
+
+        GUI.Label(new Rect(panel.x + 38f, panel.y + 260f, panel.width - 76f, 32f), "CONTROLS", introHeaderStyle);
+        GUI.Label(new Rect(panel.x + 38f, panel.y + 298f, panel.width - 76f, 72f),
+            "WASD / Arrow Keys: move     Mouse: look\nTouch a key to enter a challenge room. Do not fall from the maze platform.",
+            introBodyStyle);
+
+        GUI.Label(new Rect(panel.x + 38f, panel.y + panel.height - 78f, panel.width - 76f, 28f),
+            "Station link ready. Start when you are oriented.",
+            introSmallStyle);
+
+        Rect buttonRect = new Rect(panel.x + panel.width - 238f, panel.y + panel.height - 78f, 190f, 48f);
+        GUI.DrawTexture(buttonRect, introButtonTexture);
+        if (GUI.Button(buttonRect, "START GAME", buttonStyle))
+        {
+            showIntroScreen = false;
+            if (activeCinematicSet != null)
+            {
+                activeCinematicSet.Dispose();
+                activeCinematicSet = null;
+            }
+            Time.timeScale = 1f;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        GUI.color = oldColor;
+    }
+
+    void DrawIntroCinematicHud(float elapsed)
+    {
+        float width = Screen.width;
+        float height = Screen.height;
+        float phaseTitle = Mathf.Clamp01(elapsed / 1.2f);
+        float phaseProgress = Mathf.Clamp01((elapsed - 5.0f) / 2.2f);
+
+        DrawTintedTexture(new Rect(0f, 0f, width, height), introPanelTexture, new Color(0f, 0f, 0f, 0.22f));
+        Rect titleBack = new Rect(width * 0.5f - 430f, height * 0.12f - 14f, 860f, 122f);
+        DrawTintedTexture(titleBack, introPanelTexture, new Color(0f, 0f, 0f, 0.9f * phaseTitle));
+        DrawFrame(titleBack, new Color(0f, 0.85f, 1f, 0.36f * phaseTitle), 2f);
+
+        TextAnchor oldTitleAlignment = introTitleStyle.alignment;
+        TextAnchor oldHeaderAlignment = introHeaderStyle.alignment;
+        TextAnchor oldSmallAlignment = introSmallStyle.alignment;
+        introTitleStyle.alignment = TextAnchor.MiddleCenter;
+        introHeaderStyle.alignment = TextAnchor.MiddleCenter;
+        introSmallStyle.alignment = TextAnchor.MiddleCenter;
+
+        GUI.color = new Color(0.78f, 1f, 1f, phaseTitle);
+        GUI.Label(new Rect(0f, height * 0.12f, width, 58f), "NEBULA KEY PROTOCOL", introTitleStyle);
+
+        string status = elapsed < 1.6f
+            ? "ORBITAL APPROACH"
+            : elapsed < 3.2f
+                ? "STATION LINK ESTABLISHED"
+                : "MAZE BRIEFING READY";
+        GUI.color = new Color(1f, 0.72f, 0.18f, Mathf.Clamp01((elapsed - 0.8f) / 0.8f));
+        GUI.Label(new Rect(0f, height * 0.12f + 62f, width, 28f), status, introHeaderStyle);
+
+        Rect progressBack = new Rect(width * 0.5f - 180f, height * 0.82f, 360f, 8f);
+        Rect progressPanel = new Rect(progressBack.x - 44f, progressBack.y - 20f, progressBack.width + 88f, 66f);
+        DrawTintedTexture(progressPanel, introPanelTexture, new Color(0f, 0f, 0f, 0.62f * phaseProgress));
+        DrawFrame(progressPanel, new Color(1f, 0.72f, 0.18f, 0.24f * phaseProgress), 1.5f);
+        DrawTintedTexture(progressBack, introDimLineTexture, new Color(0f, 0.2f, 0.28f, 0.78f * phaseProgress));
+        DrawTintedTexture(new Rect(progressBack.x, progressBack.y, progressBack.width * phaseProgress, progressBack.height), introLineTexture, new Color(0f, 0.95f, 1f, 0.95f * phaseProgress));
+        GUI.color = new Color(0.55f, 0.95f, 1f, phaseProgress);
+        GUI.Label(new Rect(0f, progressBack.y + 18f, width, 28f), "PRESSURIZING ACCESS ROUTE", introSmallStyle);
+
+        introTitleStyle.alignment = oldTitleAlignment;
+        introHeaderStyle.alignment = oldHeaderAlignment;
+        introSmallStyle.alignment = oldSmallAlignment;
+        GUI.color = Color.white;
+    }
+
+    void DrawIntroBriefingBackdrop()
+    {
+        float width = Screen.width;
+        float height = Screen.height;
+        DrawTintedTexture(new Rect(0f, 0f, width, height), introGlowTexture, new Color(0f, 0.12f, 0.16f, 0.14f));
+        DrawFrame(new Rect(width * 0.12f, height * 0.14f, width * 0.76f, height * 0.72f), new Color(0f, 0.65f, 0.8f, 0.16f), 2f);
+        DrawFrame(new Rect(width * 0.16f, height * 0.19f, width * 0.68f, height * 0.62f), new Color(1f, 0.72f, 0.18f, 0.10f), 1f);
+    }
+
+    void DrawFrame(Rect rect, Color color, float thickness)
+    {
+        DrawTintedTexture(new Rect(rect.x, rect.y, rect.width, thickness), introLineTexture, color);
+        DrawTintedTexture(new Rect(rect.x, rect.yMax - thickness, rect.width, thickness), introLineTexture, color);
+        DrawTintedTexture(new Rect(rect.x, rect.y, thickness, rect.height), introLineTexture, color);
+        DrawTintedTexture(new Rect(rect.xMax - thickness, rect.y, thickness, rect.height), introLineTexture, color);
+    }
+
+    void DrawTintedTexture(Rect rect, Texture2D texture, Color color)
+    {
+        Color oldColor = GUI.color;
+        GUI.color = color;
+        GUI.DrawTexture(rect, texture);
+        GUI.color = oldColor;
     }
 
     IEnumerator DelayedTeleport(Vector3 targetPos, Quaternion targetRot)
@@ -397,5 +637,40 @@ public class MazeGame : MonoBehaviour
 
         buttonStyle = new GUIStyle(GUI.skin.button);
         buttonStyle.fontSize = 20;
+
+        introTitleStyle = new GUIStyle(GUI.skin.label);
+        introTitleStyle.fontSize = 38;
+        introTitleStyle.fontStyle = FontStyle.Bold;
+        introTitleStyle.alignment = TextAnchor.MiddleLeft;
+        introTitleStyle.normal.textColor = new Color(0.78f, 1f, 1f);
+
+        introHeaderStyle = new GUIStyle(GUI.skin.label);
+        introHeaderStyle.fontSize = 18;
+        introHeaderStyle.fontStyle = FontStyle.Bold;
+        introHeaderStyle.normal.textColor = new Color(1f, 0.72f, 0.18f);
+
+        introBodyStyle = new GUIStyle(GUI.skin.label);
+        introBodyStyle.fontSize = 18;
+        introBodyStyle.wordWrap = true;
+        introBodyStyle.normal.textColor = new Color(0.88f, 0.96f, 1f);
+
+        introSmallStyle = new GUIStyle(GUI.skin.label);
+        introSmallStyle.fontSize = 15;
+        introSmallStyle.normal.textColor = new Color(0.5f, 0.95f, 1f);
+
+        introPanelTexture = MakeTexture(new Color(0.005f, 0.012f, 0.02f, 0.98f));
+        introLineTexture = MakeTexture(new Color(0f, 0.9f, 1f, 0.65f));
+        introButtonTexture = MakeTexture(new Color(0f, 0.38f, 0.5f, 0.85f));
+        introGlowTexture = MakeTexture(new Color(0f, 0.3f, 0.42f, 1f));
+        introDimLineTexture = MakeTexture(new Color(0f, 0.25f, 0.32f, 1f));
     }
+
+    Texture2D MakeTexture(Color color)
+    {
+        var texture = new Texture2D(1, 1);
+        texture.SetPixel(0, 0, color);
+        texture.Apply();
+        return texture;
+    }
+
 }

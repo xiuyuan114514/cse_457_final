@@ -364,6 +364,8 @@ public class MagnetRoomVisuals : MonoBehaviour
         }
 
         ConfigureBox("ExitDoor", new Vector3(0f, 1.7f, 14.2f), new Vector3(4.8f, 3.0f, 0.32f), panelMat);
+        CreateBox("ExitPortal_StopperWall", new Vector3(0f, 1.45f, 14.86f), new Vector3(5.4f, 2.8f, 0.38f), trimMat, true);
+        CreateBox("ExitPortal_StopperGlow", new Vector3(0f, 1.52f, 14.64f), new Vector3(4.6f, 0.1f, 0.06f), greenGlowMat, false);
 
         var goal = FindFirstObjectByType<GoalTrigger>();
         if (goal != null && goal.exitZone != null)
@@ -894,8 +896,15 @@ public class MagnetRoomVisuals : MonoBehaviour
 
     System.Collections.IEnumerator ShowSuccessOverlay()
     {
-        yield return new WaitForSeconds(3.5f);
+        yield return new WaitForSeconds(2.2f);
         showCompletionPanel = false;
+    }
+
+    public void HideCompletionOverlay()
+    {
+        showCompletionPanel = false;
+        if (instructionText != null)
+            instructionText.enabled = false;
     }
 
     void OnGUI()
